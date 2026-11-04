@@ -1,18 +1,39 @@
-import { Action } from '../99.core/interface/action.interface'
-import GeneratorBit from './fce/generator.bit'
+import { GeneratorBit } from './fce/generator.bit';
 
-// Generator actions
+export const INIT_GENERATOR = 'generator:init';
+export const PARSE_PARAMS = 'generator:parse_params';
+export const STAGE_WORKSPACE = 'generator:stage_workspace';
+export const CLONE_CONFIG = 'generator:clone_config';
+export const RUN_SCAFFOLD = 'generator:run_scaffold';
 
-export const INIT_GENERATOR = '[Generator action] Init Generator'
-export class InitGenerator implements Action {
-    readonly type = INIT_GENERATOR
-    constructor(public bale: GeneratorBit) {}
+export class InitGenerator {
+  readonly type = INIT_GENERATOR;
+  constructor(public bale: GeneratorBit) {}
 }
 
-export const UPDATE_GENERATOR = '[Generator action] Update Generator'
-export class UpdateGenerator implements Action {
-    readonly type = UPDATE_GENERATOR
-    constructor(public bale: GeneratorBit) {}
+export class ParseParams {
+  readonly type = PARSE_PARAMS;
+  constructor(public bale: GeneratorBit) {}
 }
 
-export type Actions = InitGenerator | UpdateGenerator
+export class StageWorkspace {
+  readonly type = STAGE_WORKSPACE;
+  constructor(public bale: GeneratorBit) {}
+}
+
+export class CloneConfig {
+  readonly type = CLONE_CONFIG;
+  constructor(public bale: GeneratorBit) {}
+}
+
+export class RunScaffold {
+  readonly type = RUN_SCAFFOLD;
+  constructor(public bale: GeneratorBit) {}
+}
+
+export type GeneratorActions =
+  | InitGenerator
+  | ParseParams
+  | StageWorkspace
+  | CloneConfig
+  | RunScaffold;

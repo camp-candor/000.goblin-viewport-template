@@ -13,7 +13,7 @@ export default defineWorkersConfig({
     test: {
         // FIX: Increase timeout to allow for exponential backoff retries (Chaos Engineering)
         testTimeout: 60000,
-        include: ['test/unit/**/*.test.ts'],
+        include: ['test/unit/**/*.test.ts', 'packages/500.viewport/11.generator.unit/test/**/*.test.ts'],
         poolOptions: {
             workers: {
                 wrangler: { configPath: './apps/worker/wrangler.jsonc' },
