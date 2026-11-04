@@ -12,6 +12,10 @@ import {
     quantizeShotDuration,
     adaptCausalLattice,
 } from '../../22.temporalquantization.unit/buz/temporalquantization.buzz.js'
+import {
+    bakeStaticComposition,
+    projectCoordinatePercentages,
+} from '../../20.sourcebaking.unit/buz/sourcebaking.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -38,6 +42,7 @@ const PRINT_MENU = '[Render action] Print Menu'
 
 const COMPILE_EPISODE_WORKSPACE = 'COMPILE EPISODE WORKSPACE'
 const QUANTIZE_TIMELINE = 'QUANTIZE TIMELINE'
+const BAKE_STATIC_COMPOSITION = 'BAKE STATIC COMPOSITION'
 
 export const resolveRepoRoot = (): string => {
     let curr = process.cwd()
@@ -150,6 +155,86 @@ const quantizeTimeline = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
 }
 
+export const bakeStaticCompositionJourney = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [BAKE] Ingesting dialogue shots...',
+    })
+
+    try {
+        const input = {
+            episodeId: '040',
+            seriesSlug: 'under-the-floorboards',
+            shots: [
+                {
+                    shotIndex: 1,
+                    fromFrame: 0,
+                    durationInFrames: 75,
+                    speakerId: 'spk_bog',
+                    characterName: 'BOG',
+                    emotion: 'humiliated',
+                    dialogueText: 'They locked the cellar doors.',
+                    audioWavPath: 'audio/dialogue/ep040_sh01.wav',
+                    anchorPoint: { x: 512, y: 980 },
+                    mouthBoundingBox: { x: 380, y: 240, width: 64, height: 32 },
+                },
+                {
+                    shotIndex: 2,
+                    fromFrame: 75,
+                    durationInFrames: 99,
+                    speakerId: 'spk_spleen',
+                    characterName: 'SPLEEN',
+                    emotion: 'defensive',
+                    dialogueText: 'We dig beneath the joists then.',
+                    audioWavPath: 'audio/dialogue/ep040_sh02.wav',
+                    anchorPoint: { x: 480, y: 960 },
+                    mouthBoundingBox: { x: 410, y: 220, width: 58, height: 30 },
+                    sidechainDuckingDb: -14,
+                },
+            ],
+        }
+
+        const receipt = bakeStaticComposition(input)
+
+        if (receipt.status !== 'SUCCESS') {
+            throw new Error(
+                'ERR_BAKE_FAILED: Static composition receipt not SUCCESS.',
+            )
+        }
+
+        const head = input.shots[0]
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [BAKE] Inlined from={${head.fromFrame}} durationInFrames={${head.durationInFrames}}`,
+        })
+
+        const projection = projectCoordinatePercentages(
+            head.anchorPoint.x,
+            head.anchorPoint.y,
+        )
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [BAKE] Projected anchor -> origin: ${projection.originXPercent} ${projection.originYPercent}`,
+        })
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [BAKE] Static unrolling complete: 0 dynamic array iterations.',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] [BAKE] Static React composition emitted without dynamic loops.',
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [BAKE] Invariant violation: ${err.message}`,
+        })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
 
@@ -191,6 +276,7 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         ActOlm.LIST_VIEWPORT.split(']')[1],
         COMPILE_EPISODE_WORKSPACE,
         QUANTIZE_TIMELINE,
+        BAKE_STATIC_COMPOSITION,
         'ROOT MENU',
     ]
 
@@ -255,6 +341,10 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
 
         case QUANTIZE_TIMELINE:
             await quantizeTimeline()
+            break
+
+        case BAKE_STATIC_COMPOSITION:
+            await bakeStaticCompositionJourney()
             break
 
         case 'ROOT MENU':

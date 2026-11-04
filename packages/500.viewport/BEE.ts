@@ -70,7 +70,7 @@ import { RigsModel } from './18.rigs.unit/rigs.model'
 import Seals from './19.seals.unit/fce/seals.interface'
 import { SealsModel } from './19.seals.unit/seals.model'
 import Sourcebaking from './20.sourcebaking.unit/fce/sourcebaking.interface'
-import { SourcebakingModel } from './20.sourcebaking.unit/sourcebaking.model'
+import { SourceBakingModel } from './20.sourcebaking.unit/sourcebaking.model'
 import Style from './21.style.unit/fce/style.interface'
 import { StyleModel } from './21.style.unit/style.model'
 import Temporalquantization from './22.temporalquantization.unit/fce/temporalquantization.interface'
@@ -198,7 +198,7 @@ export default class UnitData implements Model {
     remotion: Remotion = new RemotionModel()
     rigs: Rigs = new RigsModel()
     seals: Seals = new SealsModel()
-    sourcebaking: Sourcebaking = new SourcebakingModel()
+    sourcebaking: Sourcebaking = new SourceBakingModel()
     style: Style = new StyleModel()
     temporalquantization: Temporalquantization = new TemporalquantizationModel()
     versions: Versions = new VersionsModel()
