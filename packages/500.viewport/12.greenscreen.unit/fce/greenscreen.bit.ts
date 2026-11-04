@@ -1,0 +1,7 @@
+export default interface GreenscreenBit {
+    idx: string
+    src?: string
+    val?: number
+    dat?: any
+    slv?: Function
+}
