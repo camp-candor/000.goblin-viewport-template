@@ -1,7 +1,13 @@
 /* eslint-disable */
+import fs from 'fs'
+import path from 'path'
 import * as ActMnu from '../menu.action.js'
 //import * as ActAgt from '../../00.agent.unit/agent.action.js';
 import * as ActOlm from '../../00.viewport.unit/viewport.action.js'
+import {
+    stageWorkspace,
+    cloneStaticToolchain,
+} from '../../11.generator.unit/buz/generator.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -25,6 +31,84 @@ const UPDATE_CONSOLE = '[Console action] Update Console'
 const OPEN_CHOICE = '[Open action] Open Choice'
 const CLOSE_TERMINAL = '[Close action] Close Terminal'
 const PRINT_MENU = '[Render action] Print Menu'
+
+const COMPILE_EPISODE_WORKSPACE = 'COMPILE EPISODE WORKSPACE'
+
+export const resolveRepoRoot = (): string => {
+    let curr = process.cwd()
+    while (curr && curr !== path.dirname(curr)) {
+        if (
+            fs.existsSync(
+                path.join(curr, 'packages', '500.viewport', 'package.json'),
+            )
+        ) {
+            return curr
+        }
+        curr = path.dirname(curr)
+    }
+
+    if (typeof __dirname !== 'undefined') {
+        let dir = __dirname
+        while (dir && dir !== path.dirname(dir)) {
+            if (
+                fs.existsSync(
+                    path.join(dir, 'packages', '500.viewport', 'package.json'),
+                )
+            ) {
+                return dir
+            }
+            dir = path.dirname(dir)
+        }
+    }
+
+    return path.resolve(process.cwd())
+}
+
+const compileEpisodeWorkspace = async () => {
+    const outDir = path.join(resolveRepoRoot(), 'goblin-episodes', 'ep040')
+
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [SCAFFOLD] Staging workspace hierarchy...',
+    })
+
+    try {
+        const layout = stageWorkspace(outDir)
+        const cloned = cloneStaticToolchain(layout.rootDir)
+
+        const configContent = fs.readFileSync(cloned[0], 'utf-8')
+        if (
+            !configContent.includes(
+                "Config.setChromiumOpenGlRenderer('swangle')",
+            ) ||
+            !configContent.includes('Config.setConcurrency(1)')
+        ) {
+            throw new Error(
+                'ERR_TOOLCHAIN_CONFIG_CORRUPT: swangle lock missing.',
+            )
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] Toolchain config cloned with --gl=swangle',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] Episode workspace staged successfully',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [PATH] ${layout.rootDir}`,
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [SCAFFOLD] Invariant violation: ${err.message}`,
+        })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
 
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
@@ -65,6 +149,7 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         ActOlm.UPDATE_VIEWPORT.split(']')[1],
         ActOlm.TEST_VIEWPORT.split(']')[1],
         ActOlm.LIST_VIEWPORT.split(']')[1],
+        COMPILE_EPISODE_WORKSPACE,
         'ROOT MENU',
     ]
 
@@ -121,6 +206,10 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
             }
 
             await new Promise((resolve) => setTimeout(resolve, 3000))
+            break
+
+        case COMPILE_EPISODE_WORKSPACE:
+            await compileEpisodeWorkspace()
             break
 
         case 'ROOT MENU':

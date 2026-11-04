@@ -1,8 +1,11 @@
-import { GeneratorParams, ScaffoldingReceipt } from './fce/generator.interface';
+import Generator, {
+    GeneratorParams,
+    ScaffoldingReceipt,
+} from './fce/generator.interface'
 
-export class GeneratorModel {
-  idx: string = '11.generator.unit';
-  activeParams?: GeneratorParams;
-  lastReceipt?: ScaffoldingReceipt;
-  lastStatus: string = 'IDLE';
+export class GeneratorModel implements Generator {
+    idx: string = '11.generator.unit'
+    activeParams?: GeneratorParams
+    lastReceipt?: ScaffoldingReceipt
+    lastStatus: string = 'IDLE'
 }
