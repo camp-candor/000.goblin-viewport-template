@@ -8,7 +8,11 @@ const viewport = {
     },
 }
 
-export const initViewport = (cpy: ViewportModel, bal: ViewportBit, ste: State) => {
+export const initViewport = (
+    cpy: ViewportModel,
+    bal: ViewportBit,
+    ste: State,
+) => {
     const url =
         process.env.VIEWPORT_URL ||
         'https://zero00-viewport.onrender.com/api/viewport/test'
@@ -30,7 +34,10 @@ export const initViewport = (cpy: ViewportModel, bal: ViewportBit, ste: State) =
             .catch((error: any) => {
                 if (bal.slv != null) {
                     bal.slv({
-                        intBit: { idx: 'init-viewport-err', dat: error.message },
+                        intBit: {
+                            idx: 'init-viewport-err',
+                            dat: error.message,
+                        },
                     })
                 }
             })
@@ -52,7 +59,11 @@ export const updateViewport = (
     return cpy
 }
 
-export const testViewport = (cpy: ViewportModel, bal: ViewportBit, ste: State) => {
+export const testViewport = (
+    cpy: ViewportModel,
+    bal: ViewportBit,
+    ste: State,
+) => {
     bal.slv({ mytBit: { idx: 'test-viewport', val: 1 } })
     return cpy
 }
