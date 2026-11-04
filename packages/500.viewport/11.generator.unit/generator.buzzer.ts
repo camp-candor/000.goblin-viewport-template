@@ -1,2 +1,1 @@
-export { initGenerator } from './buz/generator.buzz'
-export { updateGenerator } from './buz/generator.buzz'
+export { runScaffoldBuzz } from './buz/00.generator.buzz';

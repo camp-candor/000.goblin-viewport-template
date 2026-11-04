@@ -1,8 +1,8 @@
-import Generator from './fce/generator.interface'
-import GeneratorBit from './fce/generator.interface'
+import { GeneratorParams, ScaffoldingReceipt } from './fce/generator.interface';
 
-export class GeneratorModel implements Generator {
-    //idx:string;
-    //generatorBitList: GeneratorBit[] = [];
-    //generatorBits: any = {};
+export class GeneratorModel {
+  idx: string = '11.generator.unit';
+  activeParams?: GeneratorParams;
+  lastReceipt?: ScaffoldingReceipt;
+  lastStatus: string = 'IDLE';
 }

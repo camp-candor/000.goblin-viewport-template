@@ -1,22 +1,18 @@
-import clone from 'clone-deep'
-import * as Act from './generator.action'
-import { GeneratorModel } from './generator.model'
-import * as Buzz from './generator.buzzer'
-import State from '../99.core/state'
+import * as Act from './generator.action';
+import { GeneratorModel } from './generator.model';
 
-export function reducer(
-    model: GeneratorModel = new GeneratorModel(),
-    act: Act.Actions,
-    state?: State,
-) {
-    switch (act.type) {
-        case Act.UPDATE_GENERATOR:
-            return Buzz.updateGenerator(clone(model), act.bale, state)
-
-        case Act.INIT_GENERATOR:
-            return Buzz.initGenerator(clone(model), act.bale, state)
-
-        default:
-            return model
+export function generatorReducer(
+  state: GeneratorModel = new GeneratorModel(),
+  action: Act.GeneratorActions
+): GeneratorModel {
+  switch (action.type) {
+    case Act.INIT_GENERATOR: {
+      return { ...state, lastStatus: 'INITIALIZED' };
     }
+    case Act.RUN_SCAFFOLD: {
+      return { ...state, lastStatus: 'SCAFFOLDING' };
+    }
+    default:
+      return state;
+  }
 }
