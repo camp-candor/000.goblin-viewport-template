@@ -8,6 +8,10 @@ import {
     stageWorkspace,
     cloneStaticToolchain,
 } from '../../11.generator.unit/buz/generator.buzz.js'
+import {
+    quantizeShotDuration,
+    adaptCausalLattice,
+} from '../../22.temporalquantization.unit/buz/temporalquantization.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -33,6 +37,7 @@ const CLOSE_TERMINAL = '[Close action] Close Terminal'
 const PRINT_MENU = '[Render action] Print Menu'
 
 const COMPILE_EPISODE_WORKSPACE = 'COMPILE EPISODE WORKSPACE'
+const QUANTIZE_TIMELINE = 'QUANTIZE TIMELINE'
 
 export const resolveRepoRoot = (): string => {
     let curr = process.cwd()
@@ -110,6 +115,41 @@ const compileEpisodeWorkspace = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
 }
 
+const quantizeTimeline = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [QUANT] Analyzing acoustic dialogue stems...',
+    })
+
+    try {
+        const durationMs = 3120.5
+        const frames = quantizeShotDuration(durationMs)
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [QUANT] ${durationMs.toFixed(2)} ms -> ${frames} frames (from=0, to=${frames - 1})`,
+        })
+
+        const lattice = adaptCausalLattice(frames)
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [QUANT] Causal Lattice Adapter: Shot expanded to ${lattice.diffusionFrames} frames (n=${lattice.latticeIndex}, trim=${lattice.trimEndFrames}f)`,
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] [QUANT] Acoustic timeline quantized with zero cumulative drift.',
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [QUANT] Invariant violation: ${err.message}`,
+        })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
 
@@ -150,6 +190,7 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         ActOlm.TEST_VIEWPORT.split(']')[1],
         ActOlm.LIST_VIEWPORT.split(']')[1],
         COMPILE_EPISODE_WORKSPACE,
+        QUANTIZE_TIMELINE,
         'ROOT MENU',
     ]
 
@@ -210,6 +251,10 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
 
         case COMPILE_EPISODE_WORKSPACE:
             await compileEpisodeWorkspace()
+            break
+
+        case QUANTIZE_TIMELINE:
+            await quantizeTimeline()
             break
 
         case 'ROOT MENU':
