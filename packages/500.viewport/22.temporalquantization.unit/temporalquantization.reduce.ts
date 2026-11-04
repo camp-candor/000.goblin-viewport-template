@@ -20,6 +20,12 @@ export function reducer(
         case Act.INIT_TEMPORALQUANTIZATION:
             return Buzz.initTemporalquantization(clone(model), act.bale, state)
 
+        case Act.ACCUMULATE_TIMELINE: {
+            const newModel = clone(model)
+            newModel.lastStatus = 'QUANTIZED'
+            return newModel
+        }
+
         default:
             return model
     }
