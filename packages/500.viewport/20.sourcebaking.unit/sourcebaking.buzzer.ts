@@ -1,2 +1,1 @@
-export { initSourcebaking } from './buz/sourcebaking.buzz'
-export { updateSourcebaking } from './buz/sourcebaking.buzz'
+export { runBakeStaticCompositionBuzz } from './buz/00.sourcebaking.buzz';

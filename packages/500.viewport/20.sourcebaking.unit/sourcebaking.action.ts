@@ -1,18 +1,32 @@
-import { Action } from '../99.core/interface/action.interface'
-import SourcebakingBit from './fce/sourcebaking.bit'
+import { SourceBakingBit } from './fce/sourcebaking.bit';
 
-// Sourcebaking actions
+export const INIT_SOURCE_BAKING = 'sourcebaking:init';
+export const BAKE_STATIC_COMPOSITION = 'sourcebaking:bake_static_composition';
+export const PROJECT_COORDINATES = 'sourcebaking:project_coordinates';
+export const INLINE_EXPOSURE_NUMBERS = 'sourcebaking:inline_exposure_numbers';
 
-export const INIT_SOURCEBAKING = '[Sourcebaking action] Init Sourcebaking'
-export class InitSourcebaking implements Action {
-    readonly type = INIT_SOURCEBAKING
-    constructor(public bale: SourcebakingBit) {}
+export class InitSourceBaking {
+  readonly type = INIT_SOURCE_BAKING;
+  constructor(public bale: SourceBakingBit) {}
 }
 
-export const UPDATE_SOURCEBAKING = '[Sourcebaking action] Update Sourcebaking'
-export class UpdateSourcebaking implements Action {
-    readonly type = UPDATE_SOURCEBAKING
-    constructor(public bale: SourcebakingBit) {}
+export class BakeStaticComposition {
+  readonly type = BAKE_STATIC_COMPOSITION;
+  constructor(public bale: SourceBakingBit) {}
 }
 
-export type Actions = InitSourcebaking | UpdateSourcebaking
+export class ProjectCoordinates {
+  readonly type = PROJECT_COORDINATES;
+  constructor(public bale: SourceBakingBit) {}
+}
+
+export class InlineExposureNumbers {
+  readonly type = INLINE_EXPOSURE_NUMBERS;
+  constructor(public bale: SourceBakingBit) {}
+}
+
+export type SourceBakingActions =
+  | InitSourceBaking
+  | BakeStaticComposition
+  | ProjectCoordinates
+  | InlineExposureNumbers;
