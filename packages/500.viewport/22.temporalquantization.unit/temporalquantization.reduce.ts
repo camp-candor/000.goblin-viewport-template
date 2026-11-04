@@ -1,26 +1,19 @@
-import clone from 'clone-deep'
-import * as Act from './temporalquantization.action'
-import { TemporalquantizationModel } from './temporalquantization.model'
-import * as Buzz from './temporalquantization.buzzer'
-import State from '../99.core/state'
+import * as Act from './temporalquantization.action';
+import { TemporalquantizationModel } from './temporalquantization.model';
 
 export function reducer(
-    model: TemporalquantizationModel = new TemporalquantizationModel(),
-    act: Act.Actions,
-    state?: State,
-) {
-    switch (act.type) {
-        case Act.UPDATE_TEMPORALQUANTIZATION:
-            return Buzz.updateTemporalquantization(
-                clone(model),
-                act.bale,
-                state,
-            )
-
-        case Act.INIT_TEMPORALQUANTIZATION:
-            return Buzz.initTemporalquantization(clone(model), act.bale, state)
-
-        default:
-            return model
+  model: TemporalquantizationModel = new TemporalquantizationModel(),
+  act: Act.Actions,
+  state?: any
+): TemporalquantizationModel {
+  switch (act.type) {
+    case Act.INIT_TEMPORALQUANTIZATION: {
+      return { ...model, lastStatus: 'INITIALIZED' };
     }
+    case Act.ACCUMULATE_TIMELINE: {
+      return { ...model, lastStatus: 'QUANTIZED' };
+    }
+    default:
+      return model;
+  }
 }

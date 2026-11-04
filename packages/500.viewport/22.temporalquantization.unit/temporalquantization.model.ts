@@ -1,8 +1,8 @@
-import Temporalquantization from './fce/temporalquantization.interface'
-import TemporalquantizationBit from './fce/temporalquantization.interface'
+import TemporalquantizationBit from './fce/temporalquantization.bit';
+import { QuantizationManifestReceipt } from './fce/temporalquantization.interface';
 
-export class TemporalquantizationModel implements Temporalquantization {
-    //idx:string;
-    //temporalquantizationBitList: TemporalquantizationBit[] = [];
-    //temporalquantizationBits: any = {};
+export class TemporalquantizationModel implements TemporalquantizationBit {
+  idx: string = '22.temporalquantization.unit';
+  lastReceipt?: QuantizationManifestReceipt;
+  lastStatus: string = 'IDLE';
 }
