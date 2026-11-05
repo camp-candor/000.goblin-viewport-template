@@ -2,7 +2,8 @@
     "extends": "../../apps/995.library/tsconfig-base.json",
     "compilerOptions": {
         "outDir": "../dist/500.viewport",
-        "composite": true,
+        "composite": false,
+        "types": ["node", "@cloudflare/workers-types"],
         "skipLibCheck": true,
         "noImplicitAny": false,
         "strictNullChecks": false,

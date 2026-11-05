@@ -1,12 +1,16 @@
 /**
  * apps/worker/src/index.ts
  * Cloudflare Edge Hono Routing Gateway Entrypoint.
+ * Mounts REST compilation ingress and /ws/compile WebSocket hibernation proxy.
  * Pure 7-bit ASCII status logging - zero multi-byte emojis.
  */
 
 import { Hono } from 'hono'
 import { authGate } from './middleware/authGate.js'
 import { compileRoutes } from './routes/compileRoutes.js'
+import { CompilationCoordinatorDO } from './objects/CompilationCoordinatorDO.js'
+
+export { CompilationCoordinatorDO }
 
 export interface Env {
     readonly AUTH_TOKEN?: string
@@ -18,6 +22,7 @@ export interface Env {
     readonly GITHUB_TOKEN?: string
     readonly AI?: any
     readonly AGENT_SESSION?: any
+    readonly COMPILATION_COORDINATOR_DO?: DurableObjectNamespace<CompilationCoordinatorDO>
 }
 
 export class AgentSessionDO {}
@@ -35,11 +40,29 @@ app.get('/health', (c) => {
     })
 })
 
-// 2. Authenticated Compilation Ingress Sub-Router
+// 2. WebSocket Compile Telemetry Relay Handshake (TASK-VT-6.1)
+app.get('/ws/compile', async (c) => {
+    const upgradeHeader = c.req.header('Upgrade')
+    if (upgradeHeader !== 'websocket') {
+        return c.text('Expected Upgrade: websocket', 426)
+    }
+
+    // Forward raw WebSocket request directly to singleton Durable Object
+    if (!c.env.COMPILATION_COORDINATOR_DO) {
+        return c.text('Compilation Coordinator unavailable', 503)
+    }
+    const id = c.env.COMPILATION_COORDINATOR_DO.idFromName(
+        'global_compilation_coordinator',
+    )
+    const stub = c.env.COMPILATION_COORDINATOR_DO.get(id)
+    return stub.fetch(c.req.raw)
+})
+
+// 3. Authenticated Compilation Ingress Sub-Router
 app.use('/api/*', authGate)
 app.route('/api/compile', compileRoutes)
 
-// 3. Catch-All Route for Undefined Paths
+// 4. Catch-All Route for Undefined Paths
 app.all('*', (c) => {
     return c.json(
         {

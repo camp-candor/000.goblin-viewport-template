@@ -144,7 +144,7 @@ export const runPhase5GatewayDemo = async (): Promise<void> => {
                     body: JSON.stringify(payload),
                 },
                 env,
-                executionCtx,
+                executionCtx as any,
             )
             const latencyMs = Date.now() - t0
             const body = (await res.json()) as {
