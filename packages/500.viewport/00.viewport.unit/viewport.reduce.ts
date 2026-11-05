@@ -22,6 +22,9 @@ export function reducer(
         case Act.LIST_VIEWPORT:
             return Buzz.listViewport(clone(model), act.bale, state)
 
+        case Act.COMPILE_MASTER_EPISODE:
+            return Buzz.compileMasterEpisode(clone(model), act.bale, state)
+
         default:
             return model
     }

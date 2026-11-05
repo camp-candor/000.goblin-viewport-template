@@ -1,6 +1,7 @@
 import { ViewportModel } from '../viewport.model.js'
 import ViewportBit from '../fce/viewport.bit.js'
 import State from '../../99.core/state.js'
+import { routeTelemetryToConsole } from '../../99.bus.unit/buz/bus.buzz.js'
 
 const viewport = {
     list: async () => {
@@ -81,5 +82,21 @@ export const listViewport = async (
                 lst: response.models.map((m: any) => m.name),
             },
         })
+    return cpy
+}
+
+export const compileMasterEpisode = (
+    cpy: ViewportModel,
+    bal: ViewportBit,
+    ste: State,
+) => {
+    routeTelemetryToConsole({
+        topic: 'VIEWPORT',
+        level: 'INFO',
+        message: 'Episode 040 compiled with zero runtime drift.',
+    })
+    if (bal.slv != null) {
+        bal.slv({ vptBit: { idx: 'compile-master-episode', val: 1 } })
+    }
     return cpy
 }

@@ -1,6 +1,14 @@
-export default interface MenuBit {
+import { ViewportMenuModel, MenuChoiceItem } from './menu.interface'
+
+export interface MenuBit {
     idx: string
     src?: string
-    lst?: any
-    slv?: Function
+    val: number
+    dat?: {
+        model?: ViewportMenuModel
+        selectedChoice?: MenuChoiceItem
+        error?: string
+    }
 }
+
+export default MenuBit

@@ -1,228 +1,75 @@
-import * as ActBus from '../../99.bus.unit/bus.action.js'
+import { BusBit } from '../fce/bus.bit'
+import { TelemetryLogPacket } from '../fce/bus.interface'
 
-import { BusModel } from '../bus.model.js'
-import BusBit from '../fce/bus.bit.js'
-import State from '../../99.core/state.js'
-import S from 'string'
-import clone from 'clone-deep'
-
-var lst, idx, bit, src, dat, dex
-
-// NOTE: 97.collect.unit was repurposed as the AST harvester in Phase 5 and no
-// longer backs a generic client store (WRITE/READ/FETCH_COLLECT and clcBit are
-// retired). Named MQTT clients are held in this module-local registry instead.
-var clientRegistry: Record<string, any> = {}
-
-const readClient = (key: string) => {
-    const client = clientRegistry[key]
-    if (client == null) {
-        throw new Error(
-            'ERR_BUS_CLIENT_NOT_FOUND: No MQTT client registered for [' +
-                key +
-                '].',
-        )
-    }
-    return client
+/**
+ * [TASK-VT-10.3] Pure 7-Bit ASCII Log Sanitizer.
+ * Strips all non-ASCII characters and UTF-8 multi-byte emojis,
+ * ensuring clean terminal rendering on Windows cmd.exe and POSIX curses.
+ */
+export const sanitizeTo7BitAscii = (text: string): string => {
+    if (!text) return ''
+    return text.replace(/[^\x00-\x7F]/g, '')
 }
 
-export const initBus = (cpy: BusModel, bal: BusBit, ste: State) => {
-    cpy.actList = []
+/**
+ * Formats a telemetry log packet into a pure 7-bit ASCII status line.
+ */
+export const formatTelemetryLine = (packet: TelemetryLogPacket): string => {
+    const token = packet.level === 'ERROR' ? '[FAIL]' : '[OK]'
+    const cleanMsg = sanitizeTo7BitAscii(packet.message)
+    return `>> ${token} [${packet.topic}] ${cleanMsg}`
+}
 
-    if (bal == null) bal = { idx: null }
-    if (bal.lst == null) bal.lst = []
+/**
+ * [TASK-VT-10.3] Console Telemetry Sink Router.
+ * Emits telemetry directly to the right-hand cns00 Blessed console box
+ * via LIBRARY bus, or falls back to standard stdout during headless test runs.
+ */
+export const routeTelemetryToConsole = (packet: TelemetryLogPacket): string => {
+    const formattedLine = formatTelemetryLine(packet)
+    const lib = (globalThis as any).LIBRARY
 
-    if (bal.src != null && bal.src.constructor == Array) lst = bal.src
-
-    bal.lst.forEach((a) => {
-        for (var key in a) {
-            cpy.actList.push(a[key])
-        }
-    })
-
-    ste.bus = (idx, dat, bit) => updateBus(cpy, { idx, dat, bit }, ste)
-
-    if (bal.dat != null) {
-        cpy.MQTT = bal.dat
-    } else {
-        console.log('return promise')
-    }
-
-    if (lst == null) {
-        if (bal.src != null) cpy.host = bal.src
-        cpy.client = cpy.MQTT.connect(cpy.host)
-        cpy.client.on('message', (tpc, msg) => {
-            messageBus(cpy, { idx: tpc, src: msg }, ste)
-        })
-        cpy.client.on('connect', () => {
-            console.log(bal.idx + ' connected ' + cpy.host)
-            openBus(cpy, { idx: 'init-bus', lst: cpy.actList }, ste)
-            if (bal.slv != null) bal.slv({ intBit: { idx: 'init-bus' } })
+    if (lib && typeof lib.hunt === 'function') {
+        // Route into Blessed cns00 console unit
+        lib.hunt('[Console action] Update Console', {
+            idx: 'cns00',
+            src: formattedLine,
         })
     } else {
-        var complete = (lst) => {
-            lst.shift()
+        // Headless fallback
+        if (process.env.NODE_ENV !== 'test') {
+            process.stdout.write(formattedLine + '\n')
+        }
+    }
 
-            if (lst.length != 0) return
+    return formattedLine
+}
 
-            if (bal.slv != null) bal.slv({ intBit: { idx: 'init-bus' } })
+export const runRouteTelemetryBuzz = (
+    ste: any,
+    bale: BusBit,
+    bal: { slv: Function; blk: Function },
+): void => {
+    try {
+        const packet = bale.dat?.packet
+        if (!packet) {
+            throw new Error('ERR_MISSING_PACKET: bale.dat.packet is required.')
         }
 
-        lst.forEach(async (a) => {
-            bit = await ste.hunt(ActBus.CREATE_BUS, {
-                idx: a.idx,
-                src: a.src,
-            })
+        const formatted = routeTelemetryToConsole(packet)
 
-            var client = bit.busBit.dat
-            clientRegistry[a.idx] = client
-
-            client.on('message', (tpc, msg) => {
-                messageBus(cpy, { idx: tpc, src: msg, bit: a.idx }, ste)
-            })
-            client.on('connect', () => {
-                console.log(a.idx + ' connected ' + a.src)
-                openBus(
-                    cpy,
-                    { idx: 'init-bus', lst: cpy.actList, bit: a.idx },
-                    ste,
-                )
-                complete(lst)
-            })
+        bal.slv({
+            idx: bale.idx,
+            val: 1,
+            src: formatted,
+            dat: { formatted },
+        })
+    } catch (err: any) {
+        bal.slv({
+            idx: bale.idx,
+            val: 0,
+            src: `>> [FAIL] [BUS] Invariant violation: ${err.message}`,
+            dat: { error: err.message },
         })
     }
-
-    return cpy
 }
-
-export const createBus = (cpy: BusModel, bal: BusBit, ste: State) => {
-    var client = cpy.MQTT.connect(bal.src)
-    if (bal.slv != null) bal.slv({ busBit: { idx: 'create-bus', dat: client } })
-
-    //client.on('message', (tpc, msg) => { messageBus(cpy, { idx: tpc, src: msg, bit:bal.idx }, ste) })
-    //client.on('connect', () => {
-    //console.log(bal.idx + " connected " + bal.src)
-    //openBus(cpy, { idx: 'init-bus', lst: cpy.actList, bit:bal.idx }, ste)
-    //})
-
-    return cpy
-}
-
-export const openBus = async (cpy: BusModel, bal: BusBit, ste: State) => {
-    var out = []
-
-    bal.lst.forEach((a) => {
-        if (a == null) return
-        if (a.includes == null) return
-        if (a.includes('[') && a.includes(']') == false) return
-        out.push(a)
-    })
-
-    var client = cpy.client
-
-    if (bal.bit != null) {
-        client = readClient(bal.bit)
-    }
-
-    out.forEach((a) => {
-        client.subscribe(a, (err) => {
-            if (!err) {
-                console.log('subscribing ' + a)
-            }
-        })
-    })
-
-    return cpy
-}
-
-export const connectBus = (cpy: BusModel, bal: BusBit, ste: State) => {
-    var lst = []
-    //if (bal.val == 1) patch(ste, ActMnu.INIT_MENU, { lst })
-}
-
-export const messageBus = async (cpy: BusModel, bal: BusBit, ste: State) => {
-    if (bal.src != null) dat = bal.src.toString()
-
-    idx = bal.idx
-    dat = JSON.parse(dat)
-
-    var client = cpy.client
-
-    if (bal.bit != null) {
-        client = readClient(bal.bit)
-    }
-
-    if (idx.includes(cpy.responseSuffix) == true) {
-        var responseIDX = bal.idx
-        var obj = cpy.promises[responseIDX]
-
-        if (obj.slv != null) obj.slv(dat)
-
-        client.unsubscribe(responseIDX, (err) => {
-            if (!err) {
-                //console.log('hitting ' + responseIDX)
-            }
-        })
-    } else {
-        var bit = await ste.hunt(idx, dat)
-        var cloneBit = clone(bit)
-
-        for (var key in cloneBit) {
-            var itm = cloneBit[key]
-            if (itm.dat != null) {
-                if (itm.dat.bit != null) itm.dat.bit = null
-            }
-        }
-
-        cloneBit
-
-        client.publish(bal.idx + cpy.responseSuffix, JSON.stringify(cloneBit))
-    }
-
-    return cpy
-}
-
-//has to return a promise
-export const updateBus = async (cpy: BusModel, bal: BusBit, ste: State) => {
-    //how does one create an error message here when bit should be used
-    var client = cpy.client
-
-    if (bal.bit != null) {
-        client = readClient(bal.bit)
-    }
-
-    if (client == null && bal.bit == null) {
-        const names = Object.keys(clientRegistry)
-        if (names.length === 0) {
-            throw new Error(
-                'ERR_BUS_NO_CLIENTS: No MQTT client connected and none registered.',
-            )
-        }
-        client = clientRegistry[names[0]]
-    }
-
-    var responseIDX = bal.idx + cpy.responseSuffix
-
-    var slv
-    const promo = new Promise((rslv, rjct) => (slv = rslv))
-
-    var obj = { slv: (val0) => slv(val0) }
-
-    cpy.promises[responseIDX] = obj
-
-    client.subscribe(responseIDX, (err) => {
-        if (!err) {
-            //console.log('hitting ' + responseIDX)
-        }
-    })
-
-    //03.10.23
-    //bit throws errors since sometimes it is not a primitive
-    //if (bal.dat == null) bal.dat = {}
-    //if (bal.dat.bit != null) bal.dat.bit = null;
-
-    client.publish(bal.idx, JSON.stringify(bal.dat))
-
-    return promo
-}
-
-var patch = (ste, type, bale) => ste.dispatch({ type, bale })

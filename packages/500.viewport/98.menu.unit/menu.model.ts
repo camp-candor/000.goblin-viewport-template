@@ -1,15 +1,10 @@
-import Menu from './fce/menu.interface.js'
-import MenuBit from './fce/menu.interface.js'
+import { ViewportMenuModel } from './fce/menu.interface'
 
-export class MenuModel implements Menu {
-    lst: string[] = []
-
-    geoJsonNow: any
-    atlasNow: any
-    sizeNow: any = 0
-    mapShape: string = 'none'
-    mapNomNow: string = 'none'
-    mapDimensions: string = 'none'
-
-    shapeBit: any
+export class MenuModel implements ViewportMenuModel {
+    idx: string = '98.menu.unit'
+    selectedChoice: number = 0
+    activeEpisodeId: string = 'ep040'
+    lastActionStatus: string = 'IDLE'
 }
+
+export default MenuModel

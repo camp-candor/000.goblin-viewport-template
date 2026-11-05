@@ -1,43 +1,22 @@
-import { Action } from '../99.core/interface/action.interface.js'
-import BusBit from './fce/bus.bit.js'
+import { BusBit } from './fce/bus.bit'
 
-// Bus actions
+export const INIT_BUS = 'bus:init'
+export const ROUTE_TELEMETRY = 'bus:route_telemetry'
+export const SANITIZE_LOG = 'bus:sanitize_log'
 
-export const INIT_BUS = '[Bus action] Init Bus'
-export class InitBus implements Action {
+export class InitBus {
     readonly type = INIT_BUS
     constructor(public bale: BusBit) {}
 }
 
-export const OPEN_BUS = '[Bus action] Open Bus'
-export class OpenBus implements Action {
-    readonly type = OPEN_BUS
+export class RouteTelemetry {
+    readonly type = ROUTE_TELEMETRY
     constructor(public bale: BusBit) {}
 }
 
-export const CONNECT_BUS = '[Bus action] Connect Bus'
-export class ConnectBus implements Action {
-    readonly type = CONNECT_BUS
+export class SanitizeLog {
+    readonly type = SANITIZE_LOG
     constructor(public bale: BusBit) {}
 }
 
-export const MESSAGE_BUS = '[Bus action] Message Bus'
-export class MessageBus implements Action {
-    readonly type = MESSAGE_BUS
-    constructor(public bale: BusBit) {}
-}
-
-export const UPDATE_BUS = '[Bus action] Update Bus'
-export class UpdateBus implements Action {
-    readonly type = UPDATE_BUS
-    constructor(public bale: BusBit) {}
-}
-
-export const CREATE_BUS = '[Bus action] Create Bus'
-export class CreateBus implements Action {
-    readonly type = CREATE_BUS
-    constructor(public bale: BusBit) {}
-}
-
-export type Actions =
-    InitBus | OpenBus | UpdateBus | ConnectBus | MessageBus | CreateBus
+export type BusActions = InitBus | RouteTelemetry | SanitizeLog

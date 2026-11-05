@@ -7,10 +7,13 @@ import path from 'path'
 import fs from 'fs'
 import { createRequire } from 'module'
 
-const require = createRequire(import.meta.url)
+const cjsRequire = createRequire(import.meta.url)
 const exec = promisify(execCb)
 
 // 1. Setup CLI
+import { parseCliArguments } from './cliArgs.js'
+export { parseCliArguments, bootTerminalCockpit } from './cliArgs.js'
+
 program.option('--first').option('-t, --separator <char>')
 program.parse(process.argv)
 const options = program.opts()
@@ -117,17 +120,18 @@ const init = async () => {
     global.window = global as any
     ;(global as any).PIVOTS = (global as any).PIVOTS || {}
 
-    const idx = options.separator
+    const cliArgs = parseCliArguments(process.argv)
+    const idx = options.separator || cliArgs.targetPackage
     if (idx) console.log(`   Targeting: ${idx}`)
 
     const libPath = path.resolve(import.meta.dirname, './dist/995.library')
     const existingPackages = getExistingPackages()
 
     try {
-        const LIBRARY = require(path.join(libPath, 'hunt'))
+        const LIBRARY = cjsRequire(path.join(libPath, 'hunt'))
         global.LIBRARY = LIBRARY
 
-        const LIBRARY_ACTION = require(
+        const LIBRARY_ACTION = cjsRequire(
             path.join(libPath, '00.library.unit/library.action'),
         )
 
@@ -139,7 +143,7 @@ const init = async () => {
         })
 
         const identity = getRootIdentity()
-        const CONSOLE_ACTION_LIBRARY = require(
+        const CONSOLE_ACTION_LIBRARY = cjsRequire(
             path.join(libPath, '83.console.unit/console.action'),
         )
         const cnsBit = await LIBRARY.hunt(CONSOLE_ACTION_LIBRARY.READ_CONSOLE, {
@@ -164,7 +168,7 @@ const init = async () => {
             if (logWidget.screen) logWidget.screen.render()
         }
 
-        const MENU_ACTION_LIBRARY = require(
+        const MENU_ACTION_LIBRARY = cjsRequire(
             path.join(libPath, '98.menu.unit/menu.action'),
         )
 
@@ -209,7 +213,7 @@ const init = async () => {
                 }
 
                 const huntModulePath = path.join(pkgDistPath, 'hunt')
-                const MODULE = require(huntModulePath)
+                const MODULE = cjsRequire(huntModulePath)
                 const instance = MODULE.default || MODULE
 
                 // Inject into global namespace & central pivot registry
@@ -234,7 +238,7 @@ const init = async () => {
                     continue
                 }
 
-                const MENU_ACTION = require(menuActionPath)
+                const MENU_ACTION = cjsRequire(menuActionPath)
 
                 // Mount sub-menu into root Blessed navigation
                 await LIBRARY.hunt(MENU_ACTION_LIBRARY.ROUTE_MENU, {
@@ -311,7 +315,7 @@ const init = async () => {
                     fs.existsSync(menuActionPath + '.ts') ||
                     fs.existsSync(menuActionPath)
                 ) {
-                    const TARGET_ACTION = require(menuActionPath)
+                    const TARGET_ACTION = cjsRequire(menuActionPath)
                     await (global as any)[target.globalKey].hunt(
                         TARGET_ACTION.INIT_MENU,
                         {
@@ -372,4 +376,6 @@ const main = async () => {
     }
 }
 
-main()
+if (process.env.NODE_ENV !== 'test' && !process.env.VITEST) {
+    main()
+}

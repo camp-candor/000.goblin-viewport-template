@@ -1,9 +1,14 @@
-export default interface BusBit {
+import { TelemetryLogPacket, BusModelData } from './bus.interface'
+
+export interface BusBit {
     idx: string
-    val?: number
-    lst?: any
-    src?: any
-    bit?: string
-    slv?: Function
-    dat?: any
+    src?: string
+    val: number
+    dat?: {
+        packet?: TelemetryLogPacket
+        model?: BusModelData
+        error?: string
+    }
 }
+
+export default BusBit

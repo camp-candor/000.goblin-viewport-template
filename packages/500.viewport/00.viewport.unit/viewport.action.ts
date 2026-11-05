@@ -39,6 +39,12 @@ export class ListViewport implements Action {
     constructor(public bale: ViewportBit) {}
 }
 
+export const COMPILE_MASTER_EPISODE = 'viewport:compile_master_episode'
+export class CompileMasterEpisode implements Action {
+    readonly type = COMPILE_MASTER_EPISODE
+    constructor(public bale: ViewportBit) {}
+}
+
 export type Actions =
     | InitViewport
     | UpdateViewport
@@ -46,3 +52,4 @@ export type Actions =
     | IntellectViewport
     | VisionViewport
     | ListViewport
+    | CompileMasterEpisode
