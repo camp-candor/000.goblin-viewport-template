@@ -1,7 +1,18 @@
-import AssetsBit from './assets.bit'
+export interface AssetFileAudit {
+  filePath: string;
+  sizeBytes: number;
+  sha256: string;
+  isZeroByte: boolean;
+  isUnhydratedLfs: boolean;
+}
 
-export default interface Assets {
-    // idx:string;
-    // assetsBitList: AssetsBit[];
-    // assetsBits:any;
+export interface StorageEnvelopeReceipt {
+  status: 'SUCCESS' | 'ERROR';
+  totalBytes: number;
+  totalMegaBytes: number;
+  fileCount: number;
+  nominalBudgetPassed: boolean; // < 100 MB
+  hardCeilingBreached: boolean;  // > 150 MB
+  audits: AssetFileAudit[];
+  errorMessage?: string;
 }

@@ -1,7 +1,12 @@
-export default interface AssetsBit {
-    idx: string
-    src?: string
-    val?: number
-    dat?: any
-    slv?: Function
+import { StorageEnvelopeReceipt } from './assets.interface';
+
+export interface AssetsBit {
+  idx: string;
+  src?: string;
+  val: number;
+  dat?: {
+    targetDir?: string;
+    receipt?: StorageEnvelopeReceipt;
+    error?: string;
+  };
 }

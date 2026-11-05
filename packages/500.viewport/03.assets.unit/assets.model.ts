@@ -1,8 +1,7 @@
-import Assets from './fce/assets.interface'
-import AssetsBit from './fce/assets.interface'
+import { StorageEnvelopeReceipt } from './fce/assets.interface';
 
-export class AssetsModel implements Assets {
-    //idx:string;
-    //assetsBitList: AssetsBit[] = [];
-    //assetsBits: any = {};
+export class AssetsModel {
+  idx: string = '03.assets.unit';
+  lastReceipt?: StorageEnvelopeReceipt;
+  lastStatus: string = 'IDLE';
 }

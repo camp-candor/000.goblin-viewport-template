@@ -1,9 +1,7 @@
-import CaboodleBit from './fce/caboodle.bit.js'
-import Collect from './fce/collect.interface.js'
-import CollectBit from './fce/collect.interface.js'
+import { HarvestReceipt } from './fce/collect.interface';
 
-export class CollectModel implements Collect {
-    idx: string = '23.11.14'
-    caboodleBitList: CaboodleBit[] = []
-    caboodleBits: any = {}
+export class CollectModel {
+  idx: string = '97.collect.unit';
+  lastReceipt?: HarvestReceipt;
+  lastStatus: string = 'IDLE';
 }
