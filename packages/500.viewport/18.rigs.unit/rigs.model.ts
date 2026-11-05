@@ -1,8 +1,7 @@
-import Rigs from './fce/rigs.interface'
-import RigsBit from './fce/rigs.interface'
+import { RigsVendoringReceipt } from './fce/rigs.interface';
 
-export class RigsModel implements Rigs {
-    //idx:string;
-    //rigsBitList: RigsBit[] = [];
-    //rigsBits: any = {};
+export class RigsModel {
+  idx: string = '18.rigs.unit';
+  lastReceipt?: RigsVendoringReceipt;
+  lastStatus: string = 'IDLE';
 }

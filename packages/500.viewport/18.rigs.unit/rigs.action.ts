@@ -1,18 +1,16 @@
-import { Action } from '../99.core/interface/action.interface'
-import RigsBit from './fce/rigs.bit'
+import { RigsBit } from './fce/rigs.bit';
 
-// Rigs actions
+export const INIT_RIGS = 'rigs:init';
+export const VENDOR_PRESENTATION_RIGS = 'rigs:vendor_presentation_rigs';
 
-export const INIT_RIGS = '[Rigs action] Init Rigs'
-export class InitRigs implements Action {
-    readonly type = INIT_RIGS
-    constructor(public bale: RigsBit) {}
+export class InitRigs {
+  readonly type = INIT_RIGS;
+  constructor(public bale: RigsBit) {}
 }
 
-export const UPDATE_RIGS = '[Rigs action] Update Rigs'
-export class UpdateRigs implements Action {
-    readonly type = UPDATE_RIGS
-    constructor(public bale: RigsBit) {}
+export class VendorPresentationRigs {
+  readonly type = VENDOR_PRESENTATION_RIGS;
+  constructor(public bale: RigsBit) {}
 }
 
-export type Actions = InitRigs | UpdateRigs
+export type RigsActions = InitRigs | VendorPresentationRigs;
