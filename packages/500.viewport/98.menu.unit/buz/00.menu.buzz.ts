@@ -26,6 +26,11 @@ import {
     executeHarvestExtraction,
 } from '../../97.collect.unit/buz/collect.buzz.js'
 import { auditStorageEnvelope } from '../../03.assets.unit/buz/assets.buzz.js'
+import { executeRigsVendoring } from '../../18.rigs.unit/buz/rigs.buzz.js'
+import {
+    generateShotCameraWrapperCode,
+    generateOpticalStackJsx,
+} from '../../20.sourcebaking.unit/buz/opticalStack.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -55,6 +60,8 @@ const QUANTIZE_TIMELINE = 'QUANTIZE TIMELINE'
 const BAKE_STATIC_COMPOSITION = 'BAKE STATIC COMPOSITION'
 const RESOLVE_VISUAL_MANIFEST = 'RESOLVE VISUAL MANIFEST'
 const HARVEST_EPISODE_ASSETS = 'HARVEST EPISODE ASSETS'
+const VENDOR_PRESENTATION_RIGS = 'VENDOR PRESENTATION RIGS'
+const GENERATE_OPTICAL_SCOPES = 'GENERATE OPTICAL SCOPES'
 
 export const resolveRepoRoot = (): string => {
     let curr = process.cwd()
@@ -472,6 +479,150 @@ export const harvestEpisodeAssetsJourney = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
 }
 
+export const vendorPresentationRigsJourney = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [RIGS] Initializing presentation primitive vendoring...',
+    })
+
+    let componentsDir = ''
+    try {
+        componentsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'viewport-rigs-'))
+
+        const receipt = executeRigsVendoring(componentsDir, 'ep040')
+        if (
+            receipt.status !== 'SUCCESS' ||
+            receipt.totalComponentsVendored !== 3
+        ) {
+            throw new Error(
+                'ERR_RIGS_COUNT_FAILED: Expected 3 vendored presentation components.',
+            )
+        }
+
+        for (const fileName of [
+            'GoblinPuppet.tsx',
+            'AmbientTrack.tsx',
+            'FoleyTrack.tsx',
+        ]) {
+            const audit = receipt.vendoredFiles.find(
+                (f) => f.fileName === fileName,
+            )
+            if (!audit || !fs.existsSync(audit.destinationPath)) {
+                throw new Error(
+                    `ERR_RIGS_MISSING_FILE: Vendored file not written: ${fileName}`,
+                )
+            }
+            if (audit.hasDanglingParentImports) {
+                throw new Error(
+                    `ERR_RIGS_DANGLING_IMPORTS: Unsanitized parent imports in ${fileName}`,
+                )
+            }
+            if (!/^[a-f0-9]{64}$/.test(audit.sha256)) {
+                throw new Error(
+                    `ERR_RIGS_BAD_DIGEST: Invalid SHA-256 digest on ${fileName}`,
+                )
+            }
+            await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+                idx: 'cns00',
+                src: `>> [RIGS] Vendored components/${fileName} (sanitized imports)`,
+            })
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [ISOLATION] Verified 0 dangling parent imports (../) across 3 files.',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] [RIGS] Vendored 3 presentation components for Episode.',
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [RIGS] Invariant violation: ${err.message}`,
+        })
+    } finally {
+        if (componentsDir)
+            fs.rmSync(componentsDir, { recursive: true, force: true })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
+export const generateOpticalScopesJourney = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [OPTICAL] Synthesizing camera wrappers for shot cuts...',
+    })
+
+    try {
+        const shot = {
+            shotIndex: 1,
+            fromFrame: 0,
+            durationInFrames: 75,
+            transformOrigin: '50.00% 95.70%',
+            zoomScale: 1.15,
+            opticalLayers: {
+                environmentMattePath: 'environments/env_swamp/swamp_matte.png',
+                vectorSubtitleText: 'The joists are rotting.',
+                characterName: 'char_bog',
+                emotion: 'humiliated',
+                greenDespillEnabled: true,
+                contactShadowEnabled: true,
+                lensSimulationEnabled: true,
+            },
+        }
+
+        const wrapperCode = generateShotCameraWrapperCode(
+            shot.shotIndex,
+            shot.durationInFrames,
+            shot.transformOrigin,
+            shot.zoomScale,
+        )
+        if (!wrapperCode.includes('const localFrame = useCurrentFrame();')) {
+            throw new Error(
+                'ERR_HOOK_DRIFT: Camera wrapper does not isolate useCurrentFrame locally.',
+            )
+        }
+
+        const wrapperName = `Shot${String(shot.shotIndex).padStart(2, '0')}CameraWrapper`
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [OPTICAL] Scoped wrapper ${wrapperName} (origin: ${shot.transformOrigin}, scale: ${shot.zoomScale})`,
+        })
+
+        const stackJsx = generateOpticalStackJsx(shot as any)
+        for (const z of [
+            'zIndex: 10',
+            'zIndex: 20',
+            'zIndex: 30',
+            'zIndex: 40',
+        ]) {
+            if (!stackJsx.includes(z)) {
+                throw new Error(
+                    `ERR_LAYER_STACK_BROKEN: Optical stack missing ${z}.`,
+                )
+            }
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OPTICAL] Mounted 4-layer optical stack (Matte -> Typography -> Character -> Lens)',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] [OPTICAL] Synthesized 4-layer optical press for shots.',
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [OPTICAL] Invariant violation: ${err.message}`,
+        })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
 
@@ -516,6 +667,8 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         BAKE_STATIC_COMPOSITION,
         RESOLVE_VISUAL_MANIFEST,
         HARVEST_EPISODE_ASSETS,
+        VENDOR_PRESENTATION_RIGS,
+        GENERATE_OPTICAL_SCOPES,
         'ROOT MENU',
     ]
 
@@ -592,6 +745,14 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
 
         case HARVEST_EPISODE_ASSETS:
             await harvestEpisodeAssetsJourney()
+            break
+
+        case VENDOR_PRESENTATION_RIGS:
+            await vendorPresentationRigsJourney()
+            break
+
+        case GENERATE_OPTICAL_SCOPES:
+            await generateOpticalScopesJourney()
             break
 
         case 'ROOT MENU':
