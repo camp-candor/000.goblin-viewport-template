@@ -1,2 +1,1 @@
-export { initRigs } from './buz/rigs.buzz'
-export { updateRigs } from './buz/rigs.buzz'
+export { runVendorPresentationRigsBuzz } from './buz/00.rigs.buzz';
