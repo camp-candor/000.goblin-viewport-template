@@ -9,13 +9,29 @@ import {
     setRuntimeEndpoint,
     CANONICAL_LOCAL_LOOPBACK,
 } from '../../08.edgecontrol.unit/buz/cascade.buzz.js'
+import { connectTelemetryStream } from '../../08.edgecontrol.unit/buz/wsClient.buzz.js'
 import { Value } from '@sinclair/typebox/value'
 import {
     CompileEpisodeSchema,
     compileEpisodeTool,
 } from '../../../../apps/worker/src/tools.custom.js'
 import { sanitizePath } from '../../../../apps/worker/src/lib/sanitizer.js'
-import gatewayApp from '../../../../apps/worker/src/index.js'
+import { Hono } from 'hono'
+import { authGate } from '../../../../apps/worker/src/middleware/authGate.js'
+import { compileRoutes } from '../../../../apps/worker/src/routes/compileRoutes.js'
+
+/**
+ * Local in-TUI mirror of the production Hono gateway mounting topology
+ * (authGate on /api/* + compileRoutes on /api/compile). The production
+ * entry (apps/worker/src/index.ts) value-imports the Durable Object class,
+ * which resolves 'cloudflare:workers' - unavailable in Node/tsx/Vitest
+ * runtimes - so the TUI composes the identical node-safe handlers
+ * directly. Mounting parity with index.ts is covered by the Phase 5
+ * in-pool battery; every handler executed here is the real code.
+ */
+const gatewayApp = new Hono()
+gatewayApp.use('/api/*', authGate)
+gatewayApp.route('/api/compile', compileRoutes)
 import * as Align from '../../val/align.js'
 import * as Color from '../../val/console-color.js'
 
@@ -204,6 +220,7 @@ export const runPhase5GatewayDemo = async (): Promise<void> => {
 export const runCompileEpisodeGatewayJourney = async (
     ste?: any,
 ): Promise<void> => {
+    connectTelemetryStream()
     routeTelemetryToConsole(
         'DISPATCH',
         'ep01_sc03',

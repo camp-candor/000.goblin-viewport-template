@@ -74,7 +74,39 @@ describe('Phase 6 Local WebSocket Telemetry Client Engine', () => {
         expect(telemetryClientState.lastSeqReceived).toBe(12)
     })
 
-    it('triggers self-healing reconnection loop on unintended socket drop', async () => {
+    it('traps sequence gap anomalies and logs explicit warning (Level 2.7)', async () => {
+        const huntSpy = vi.fn()
+        ;(globalThis as any).LIBRARY = { hunt: huntSpy }
+
+        connectTelemetryStream(undefined, MockWebSocket as any)
+        await new Promise((r) => setTimeout(r, 15))
+
+        const ws = MockWebSocket.instances[0]
+        telemetryClientState.lastSeqReceived = 10
+
+        ws.onmessage?.({
+            data: JSON.stringify({
+                seq: 15,
+                ascii: '>> [RELAY:STEP] Event 15',
+            }),
+        })
+
+        expect(telemetryClientState.lastSeqReceived).toBe(15)
+        expect(huntSpy).toHaveBeenCalledWith(
+            '[Console action] Update Console',
+            {
+                idx: 'cns00',
+                src: '>> [WS:WARN] Detected sequence gap: missed 4 frame(s)',
+            },
+        )
+
+        delete (globalThis as any).LIBRARY
+    })
+
+    it('triggers self-healing reconnection loop and logs CLOSE on unintended socket drop', async () => {
+        const huntSpy = vi.fn()
+        ;(globalThis as any).LIBRARY = { hunt: huntSpy }
+
         vi.useFakeTimers()
         connectTelemetryStream(undefined, MockWebSocket as any)
         await vi.advanceTimersByTimeAsync(15)
@@ -83,6 +115,13 @@ describe('Phase 6 Local WebSocket Telemetry Client Engine', () => {
         const ws = MockWebSocket.instances[0]
         ws.close() // Server drops connection
 
+        expect(huntSpy).toHaveBeenCalledWith(
+            '[Console action] Update Console',
+            {
+                idx: 'cns00',
+                src: '>> [WS:CLOSE] Telemetry connection terminated cleanly.',
+            },
+        )
         expect(telemetryClientState.status).toBe('RECONNECTING')
         expect(telemetryClientState.reconnectAttempts).toBe(1)
 
@@ -91,6 +130,7 @@ describe('Phase 6 Local WebSocket Telemetry Client Engine', () => {
         expect(MockWebSocket.instances.length).toBe(2)
 
         vi.useRealTimers()
+        delete (globalThis as any).LIBRARY
     })
 
     it('terminates cleanly on disconnectTelemetryStream without reconnecting', async () => {

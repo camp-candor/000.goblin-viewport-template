@@ -6,10 +6,7 @@
  */
 
 import { resolveCoordinationEndpoint } from './cascade.buzz.js'
-import {
-    routeTelemetryToConsole,
-    formatTelemetryLine,
-} from '../../99.bus.unit/buz/bus.buzz.js'
+import { routeTelemetryToConsole } from '../../99.bus.unit/buz/bus.buzz.js'
 
 export interface TelemetryClientState {
     ws: WebSocket | null
@@ -36,11 +33,7 @@ export function connectTelemetryStream(
 ): WebSocket | null {
     if (typeof CustomWebSocket !== 'function') {
         routeTelemetryToConsole(
-            formatTelemetryLine(
-                'WS',
-                'CLIENT',
-                'WebSocket unavailable in runtime. Running decoupled.',
-            ),
+            '>> [WS:CLIENT] WebSocket unavailable in runtime. Running decoupled.',
         )
         return null
     }
@@ -52,11 +45,7 @@ export function connectTelemetryStream(
     const targetUrl = `${resolvedWsUrl}/ws/compile?role=operator`
 
     routeTelemetryToConsole(
-        formatTelemetryLine(
-            'WS',
-            'CONNECT',
-            `Dialing edge telemetry tunnel: ${targetUrl}`,
-        ),
+        `>> [WS] Dialing edge telemetry tunnel: ${targetUrl}`,
     )
 
     try {
@@ -67,11 +56,7 @@ export function connectTelemetryStream(
             telemetryClientState.status = 'CONNECTED'
             telemetryClientState.reconnectAttempts = 0
             routeTelemetryToConsole(
-                formatTelemetryLine(
-                    'WS',
-                    'OPEN',
-                    'Edge telemetry tunnel established [OK]',
-                ),
+                '>> [WS:OPEN] Edge telemetry tunnel established [OK]',
             )
         }
 
@@ -89,11 +74,7 @@ export function connectTelemetryStream(
                     Array.isArray(data.items)
                 ) {
                     routeTelemetryToConsole(
-                        formatTelemetryLine(
-                            'WS',
-                            'REPLAY',
-                            `Restoring ${data.items.length} historical frames:`,
-                        ),
+                        `>> [WS:REPLAY] Restoring ${data.items.length} historical frames:`,
                     )
                     for (const item of data.items) {
                         if (item.seq > telemetryClientState.lastSeqReceived) {
@@ -116,11 +97,7 @@ export function connectTelemetryStream(
                             data.seq -
                             (telemetryClientState.lastSeqReceived + 1)
                         routeTelemetryToConsole(
-                            formatTelemetryLine(
-                                'WS',
-                                'WARN',
-                                `Detected sequence gap: missed ${gap} frame(s)`,
-                            ),
+                            `>> [WS:WARN] Detected sequence gap: missed ${gap} frame(s)`,
                         )
                     }
                     telemetryClientState.lastSeqReceived = data.seq
@@ -138,15 +115,12 @@ export function connectTelemetryStream(
 
         ws.onclose = () => {
             telemetryClientState.ws = null
+            routeTelemetryToConsole(
+                '>> [WS:CLOSE] Telemetry connection terminated cleanly.',
+            )
+
             if (telemetryClientState.isClosedExplicitly) {
                 telemetryClientState.status = 'DISCONNECTED'
-                routeTelemetryToConsole(
-                    formatTelemetryLine(
-                        'WS',
-                        'CLOSE',
-                        'Telemetry connection terminated cleanly.',
-                    ),
-                )
                 return
             }
 
@@ -156,22 +130,14 @@ export function connectTelemetryStream(
 
         ws.onerror = () => {
             routeTelemetryToConsole(
-                formatTelemetryLine(
-                    'WS',
-                    'ERROR',
-                    'WebSocket transport fault detected.',
-                ),
+                '>> [WS:ERROR] WebSocket transport fault detected.',
             )
         }
 
         return ws
     } catch (err: any) {
         routeTelemetryToConsole(
-            formatTelemetryLine(
-                'WS',
-                'FAIL',
-                `Failed to open socket: ${err.message}`,
-            ),
+            `>> [WS:FAIL] Failed to open socket: ${err.message}`,
         )
         scheduleReconnect(onFrame, CustomWebSocket)
         return null
@@ -189,11 +155,7 @@ function scheduleReconnect(
     )
 
     routeTelemetryToConsole(
-        formatTelemetryLine(
-            'WS',
-            'RECONNECT',
-            `Reconnecting in ${delayMs}ms (attempt ${telemetryClientState.reconnectAttempts})...`,
-        ),
+        `>> [WS:RECONNECT] Reconnecting in ${delayMs}ms (attempt ${telemetryClientState.reconnectAttempts})...`,
     )
 
     setTimeout(() => {

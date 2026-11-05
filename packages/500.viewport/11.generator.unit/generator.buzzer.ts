@@ -1,1 +1,1 @@
-export { runScaffoldBuzz } from './buz/00.generator.buzz';
+export { runScaffoldBuzz } from './buz/00.generator.buzz'

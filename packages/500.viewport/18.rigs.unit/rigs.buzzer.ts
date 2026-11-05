@@ -1,1 +1,1 @@
-export { runVendorPresentationRigsBuzz } from './buz/00.rigs.buzz';
+export { runVendorPresentationRigsBuzz } from './buz/00.rigs.buzz'

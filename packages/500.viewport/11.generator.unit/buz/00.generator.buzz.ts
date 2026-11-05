@@ -1,1 +1,6 @@
-export { runScaffoldBuzz, parseParams, stageWorkspace, cloneStaticToolchain } from './generator.buzz';
+export {
+    runScaffoldBuzz,
+    parseParams,
+    stageWorkspace,
+    cloneStaticToolchain,
+} from './generator.buzz'

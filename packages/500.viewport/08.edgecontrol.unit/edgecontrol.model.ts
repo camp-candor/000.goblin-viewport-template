@@ -1,4 +1,7 @@
-import { EdgeControlModel as EdgeControlInterface, DispatchErrorPayload } from './fce/edgecontrol.interface'
+import {
+    EdgeControlModel as EdgeControlInterface,
+    DispatchErrorPayload,
+} from './fce/edgecontrol.interface'
 
 export class EdgeControlModel implements EdgeControlInterface {
     idx: string = '08.edgecontrol'

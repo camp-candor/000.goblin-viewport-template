@@ -1,1 +1,1 @@
-export { runMintProvenanceLockfileBuzz } from './buz/00.manifest.buzz';
+export { runMintProvenanceLockfileBuzz } from './buz/00.manifest.buzz'
