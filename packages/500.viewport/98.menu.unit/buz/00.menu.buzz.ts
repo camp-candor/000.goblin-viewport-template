@@ -16,6 +16,10 @@ import {
     bakeStaticComposition,
     projectCoordinatePercentages,
 } from '../../20.sourcebaking.unit/buz/sourcebaking.buzz.js'
+import {
+    validateVisualManifest,
+    resolveCharacterVariant,
+} from '../../06.coordinates.unit/buz/coordinates.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -43,6 +47,7 @@ const PRINT_MENU = '[Render action] Print Menu'
 const COMPILE_EPISODE_WORKSPACE = 'COMPILE EPISODE WORKSPACE'
 const QUANTIZE_TIMELINE = 'QUANTIZE TIMELINE'
 const BAKE_STATIC_COMPOSITION = 'BAKE STATIC COMPOSITION'
+const RESOLVE_VISUAL_MANIFEST = 'RESOLVE VISUAL MANIFEST'
 
 export const resolveRepoRoot = (): string => {
     let curr = process.cwd()
@@ -235,6 +240,92 @@ export const bakeStaticCompositionJourney = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
 }
 
+export const resolveVisualManifestJourney = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [VISUAL] Parsing visual manifest...',
+    })
+
+    try {
+        const rawManifest = {
+            manifestVersion: '1.0.0',
+            seriesSlug: 'under-the-floorboards',
+            characters: {
+                char_bog: {
+                    characterId: 'char_bog',
+                    characterName: 'BOG',
+                    anchorPoint: { x: 512, y: 980 },
+                    crashZoomTarget: { x: 512, y: 320 },
+                    mouthBoundingBox: { x: 380, y: 240, width: 64, height: 32 },
+                    variants: {
+                        neutral: 'sprites/bog/bog_neutral.png',
+                        humiliated: 'sprites/bog/bog_humiliated.png',
+                    },
+                },
+                char_spleen: {
+                    characterId: 'char_spleen',
+                    characterName: 'SPLEEN',
+                    anchorPoint: { x: 480, y: 960 },
+                    crashZoomTarget: { x: 480, y: 300 },
+                    mouthBoundingBox: { x: 410, y: 220, width: 58, height: 30 },
+                    variants: {
+                        neutral: 'sprites/spleen/spleen_neutral.png',
+                        defensive: 'sprites/spleen/spleen_defensive.png',
+                    },
+                },
+            },
+        }
+
+        const manifest = validateVisualManifest(rawManifest)
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [VISUAL] Validated spatial anchors for characters',
+        })
+
+        const direct = resolveCharacterVariant(
+            manifest,
+            'char_bog',
+            'humiliated',
+        )
+        if (direct.isFallback !== false) {
+            throw new Error(
+                'ERR_DIRECT_MATCH_FAILED: humiliated must resolve without fallback.',
+            )
+        }
+
+        const fallback = resolveCharacterVariant(
+            manifest,
+            'char_bog',
+            'panicked',
+        )
+        if (
+            fallback.isFallback !== true ||
+            fallback.resolvedEmotion !== 'neutral'
+        ) {
+            throw new Error(
+                'ERR_FALLBACK_FAILED: panicked must degrade to neutral baseline.',
+            )
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [VISUAL] Resolved direct matches and fallback substitutions',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] [VISUAL] Visual contract manifest parsed.',
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [VISUAL] Invariant violation: ${err.message}`,
+        })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
 
@@ -277,6 +368,7 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         COMPILE_EPISODE_WORKSPACE,
         QUANTIZE_TIMELINE,
         BAKE_STATIC_COMPOSITION,
+        RESOLVE_VISUAL_MANIFEST,
         'ROOT MENU',
     ]
 
@@ -345,6 +437,10 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
 
         case BAKE_STATIC_COMPOSITION:
             await bakeStaticCompositionJourney()
+            break
+
+        case RESOLVE_VISUAL_MANIFEST:
+            await resolveVisualManifestJourney()
             break
 
         case 'ROOT MENU':
