@@ -1,6 +1,7 @@
 import { MenuBit } from '../fce/menu.bit'
 import { MenuChoiceItem, GridCoordinates } from '../fce/menu.interface'
 import { routeTelemetryToConsole } from '../../99.bus.unit/buz/bus.buzz'
+import { runEdgeDispatchGatewayJourney } from '../../08.edgecontrol.unit/buz/edgecontrol.buzz'
 import * as Align from '../../val/align'
 import * as Color from '../../val/console-color'
 
@@ -86,6 +87,14 @@ export const VIEWPORT_MENU_CHOICES: MenuChoiceItem[] = [
     },
     {
         choice: 9,
+        label: 'EDGE DISPATCH GATEWAY',
+        actionType: '[EdgeControl Action] Dispatch Compile Episode',
+        description:
+            'Validate local dispatch contracts and synthesize SHA-256 receipts.',
+        journey: runEdgeDispatchGatewayJourney,
+    },
+    {
+        choice: 10,
         label: 'ROOT MENU',
         actionType: 'library:root_menu',
         description: 'Return to the central studio library switchboard.',
@@ -198,6 +207,16 @@ export const renderChoiceSwitchboard = async (
 
     if (selectedItem.label === 'ROOT MENU') {
         opts?.onRootMenu?.()
+        return
+    }
+
+    if (typeof selectedItem.journey === 'function') {
+        await selectedItem.journey(ste)
+
+        // Non-recursive re-entrant tick loop (setTimeout 333ms)
+        setTimeout(() => {
+            renderChoiceSwitchboard(ste, opts)
+        }, 333)
         return
     }
 

@@ -3,6 +3,7 @@ export interface MenuChoiceItem {
     label: string
     actionType: string
     description: string
+    journey?: (ste: any) => Promise<void> | void
 }
 
 export interface ViewportMenuModel {

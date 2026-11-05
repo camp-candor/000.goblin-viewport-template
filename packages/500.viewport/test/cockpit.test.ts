@@ -11,6 +11,7 @@ import {
     routeTelemetryToConsole,
 } from '../99.bus.unit/buz/bus.buzz'
 import { parseCliArguments } from '../../../apps/995.library/cliArgs'
+import { runEdgeDispatchGatewayJourney } from '../08.edgecontrol.unit/buz/edgecontrol.buzz'
 import { compileMasterEpisode } from '../00.viewport.unit/buz/viewport.buzz'
 import { reducer as menuDispatchEntry } from '../98.menu.unit/menu.reduce'
 import { MenuModel } from '../98.menu.unit/menu.model'
@@ -31,7 +32,7 @@ describe('98.menu.unit & 99.bus.unit: Blessed Terminal Cockpit Integration', () 
     })
 
     it('[TASK-VT-10.1] registers all required viewport lifecycle choices in the switchboard', () => {
-        expect(VIEWPORT_MENU_CHOICES.length).toBe(10)
+        expect(VIEWPORT_MENU_CHOICES.length).toBe(11)
 
         const labels = VIEWPORT_MENU_CHOICES.map((c) => c.label)
         expect(labels).toContain('COMPILE MASTER EPISODE WORKSPACE')
@@ -43,6 +44,7 @@ describe('98.menu.unit & 99.bus.unit: Blessed Terminal Cockpit Integration', () 
         expect(labels).toContain('GENERATE OPTICAL SCOPES')
         expect(labels).toContain('SEAL COMPOSITION ARTIFACT')
         expect(labels).toContain('MINT PROVENANCE LOCKFILE')
+        expect(labels).toContain('EDGE DISPATCH GATEWAY')
         expect(labels).toContain('ROOT MENU')
     })
 
@@ -128,6 +130,45 @@ describe('98.menu.unit & 99.bus.unit: Blessed Terminal Cockpit Integration', () 
             expect(resolved?.vptBit?.idx).toBe('compile-master-episode')
         } finally {
             ;(globalThis as any).LIBRARY = libBackup
+        }
+    })
+
+    it('[TASK-VT-1.4] edge dispatch gateway journey streams ingest, receipt, and status telemetry', async () => {
+        const lines: string[] = []
+        const libBackup = (globalThis as any).LIBRARY
+        ;(globalThis as any).LIBRARY = {
+            hunt: async (_action: string, bale: any) => {
+                if (typeof bale?.src === 'string') lines.push(bale.src)
+                return {}
+            },
+        }
+        try {
+            await runEdgeDispatchGatewayJourney({})
+            expect(lines).toHaveLength(3)
+            expect(lines[0]).toBe(
+                '>> [EDGE:INGEST] [ep01_sc03] Intent validated',
+            )
+            expect(lines[1]).toMatch(
+                /^>> \[EDGE:RECEIPT\] \[ep01_sc03\] Hash generated: [0-9a-f]{64} \[OK\]$/,
+            )
+            expect(lines[2]).toBe(
+                '>> [EDGE:STATUS] [ep01_sc03] Status: QUEUED (seq: 1)',
+            )
+            for (const line of lines) {
+                expect(/[^\x00-\x7F]/.test(line)).toBe(false)
+            }
+        } finally {
+            ;(globalThis as any).LIBRARY = libBackup
+        }
+
+        const headlessBackup = (globalThis as any).LIBRARY
+        delete (globalThis as any).LIBRARY
+        try {
+            await expect(runEdgeDispatchGatewayJourney({})).resolves.toBe(
+                undefined,
+            )
+        } finally {
+            ;(globalThis as any).LIBRARY = headlessBackup
         }
     })
 
