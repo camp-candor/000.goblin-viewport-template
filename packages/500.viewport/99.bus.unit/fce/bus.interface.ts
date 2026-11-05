@@ -1,14 +1,20 @@
 export interface TelemetryLogPacket {
-    topic: string
-    level: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'
+    tag: string
+    sceneId: string
     message: string
+    timestampMs: number
+    formattedAscii: string
+    topic?: string
+    level?: 'INFO' | 'WARN' | 'ERROR' | 'SUCCESS'
     timestamp?: string
 }
 
 export interface BusModelData {
     idx: string
-    totalLogsRouted: number
-    lastMessage: string
+    packets: readonly TelemetryLogPacket[]
+    totalPacketsRouted: number
+    totalLogsRouted?: number
+    lastMessage?: string
 }
 
 export type Bus = BusModelData

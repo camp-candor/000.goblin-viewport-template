@@ -1,4 +1,4 @@
-import { ViewportMenuModel, MenuChoiceItem } from './menu.interface'
+import { ViewportMenuModel, MenuChoiceItem } from './menu.interface.js'
 
 export interface MenuBit {
     idx: string
@@ -7,8 +7,12 @@ export interface MenuBit {
     dat?: {
         model?: ViewportMenuModel
         selectedChoice?: MenuChoiceItem
+        targetEndpoint?: string
+        activeIndex?: number
         error?: string
     }
+    slv?: Function
+    blk?: Function
 }
 
 export default MenuBit

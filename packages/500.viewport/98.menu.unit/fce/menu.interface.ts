@@ -6,18 +6,23 @@ export interface MenuChoiceItem {
     journey?: (ste: any) => Promise<void> | void
 }
 
-export interface ViewportMenuModel {
-    idx: string
-    selectedChoice: number
-    activeEpisodeId: string
-    lastActionStatus: string
-}
-
 export interface GridCoordinates {
     x: number
     y: number
     xSpan: number
     ySpan: number
+}
+
+export interface ViewportMenuModel {
+    idx: string
+    activeIndex: number
+    choices: readonly MenuChoiceItem[]
+    targetEndpoint: string
+    isHeadless: boolean
+    lastDispatchedAtMs: number
+    selectedChoice?: number
+    activeEpisodeId?: string
+    lastActionStatus?: string
 }
 
 export type Menu = ViewportMenuModel

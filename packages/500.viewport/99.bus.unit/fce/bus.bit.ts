@@ -1,4 +1,4 @@
-import { TelemetryLogPacket, BusModelData } from './bus.interface'
+import { TelemetryLogPacket, BusModelData } from './bus.interface.js'
 
 export interface BusBit {
     idx: string
@@ -9,6 +9,8 @@ export interface BusBit {
         model?: BusModelData
         error?: string
     }
+    slv?: Function
+    blk?: Function
 }
 
 export default BusBit

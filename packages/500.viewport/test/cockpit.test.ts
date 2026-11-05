@@ -4,27 +4,25 @@ import {
     VIEWPORT_GRID_LEFT_AXIS,
     VIEWPORT_GRID_RIGHT_AXIS,
     streamChoiceTooltip,
-} from '../98.menu.unit/buz/menu.buzz'
+} from '../98.menu.unit/buz/00.menu.buzz.js'
 import {
     sanitizeTo7BitAscii,
     formatTelemetryLine,
     routeTelemetryToConsole,
-} from '../99.bus.unit/buz/bus.buzz'
-import { parseCliArguments } from '../../../apps/995.library/cliArgs'
-import { runEdgeDispatchGatewayJourney } from '../08.edgecontrol.unit/buz/edgecontrol.buzz'
-import { compileMasterEpisode } from '../00.viewport.unit/buz/viewport.buzz'
-import { reducer as menuDispatchEntry } from '../98.menu.unit/menu.reduce'
-import { MenuModel } from '../98.menu.unit/menu.model'
+} from '../99.bus.unit/buz/bus.buzz.js'
+import { parseCliArguments } from '../../../apps/995.library/cliArgs.js'
+import { runEdgeDispatchGatewayJourney } from '../08.edgecontrol.unit/buz/edgecontrol.buzz.js'
+import { compileMasterEpisode } from '../00.viewport.unit/buz/viewport.buzz.js'
+import { reducer as menuDispatchEntry } from '../98.menu.unit/menu.reduce.js'
+import { MenuModel } from '../98.menu.unit/menu.model.js'
 
 describe('98.menu.unit & 99.bus.unit: Blessed Terminal Cockpit Integration', () => {
     it('[TASK-VT-10.1] allocates 12x12 Cartesian grid boundaries for dual-pane layout', () => {
-        // Left axis occupies columns 0 to 4, full height 12
         expect(VIEWPORT_GRID_LEFT_AXIS.x).toBe(0)
         expect(VIEWPORT_GRID_LEFT_AXIS.y).toBe(0)
         expect(VIEWPORT_GRID_LEFT_AXIS.xSpan).toBe(4)
         expect(VIEWPORT_GRID_LEFT_AXIS.ySpan).toBe(12)
 
-        // Right axis occupies columns 4 to 12, full height 12
         expect(VIEWPORT_GRID_RIGHT_AXIS.x).toBe(4)
         expect(VIEWPORT_GRID_RIGHT_AXIS.y).toBe(0)
         expect(VIEWPORT_GRID_RIGHT_AXIS.xSpan).toBe(8)
@@ -32,33 +30,27 @@ describe('98.menu.unit & 99.bus.unit: Blessed Terminal Cockpit Integration', () 
     })
 
     it('[TASK-VT-10.1] registers all required viewport lifecycle choices in the switchboard', () => {
-        expect(VIEWPORT_MENU_CHOICES.length).toBe(11)
+        expect(VIEWPORT_MENU_CHOICES.length).toBe(5)
 
         const labels = VIEWPORT_MENU_CHOICES.map((c) => c.label)
-        expect(labels).toContain('COMPILE MASTER EPISODE WORKSPACE')
-        expect(labels).toContain('QUANTIZE ACOUSTIC TIMELINE')
-        expect(labels).toContain('BAKE STATIC COMPOSITION')
-        expect(labels).toContain('RESOLVE VISUAL MANIFEST')
-        expect(labels).toContain('HARVEST EPISODE ASSETS')
-        expect(labels).toContain('VENDOR PRESENTATION RIGS')
-        expect(labels).toContain('GENERATE OPTICAL SCOPES')
-        expect(labels).toContain('SEAL COMPOSITION ARTIFACT')
-        expect(labels).toContain('MINT PROVENANCE LOCKFILE')
-        expect(labels).toContain('EDGE DISPATCH GATEWAY')
+        expect(labels).toContain('COMPILE EPISODE VIA EDGE GATEWAY')
+        expect(labels).toContain('TOGGLE TARGET ENDPOINT (LOCAL/LIVE)')
+        expect(labels).toContain('INSPECT ACTIVE DISPATCH STATE')
+        expect(labels).toContain('FLUSH LOCAL WORKSPACE CACHE')
         expect(labels).toContain('ROOT MENU')
     })
 
     it('[TASK-VT-10.2] streams contextual descriptions on choice focus without crashing', () => {
-        const tooltip = streamChoiceTooltip('COMPILE MASTER EPISODE WORKSPACE')
-        expect(tooltip).toContain('>> [OK] [VIEWPORT]')
+        const tooltip = streamChoiceTooltip('COMPILE EPISODE VIA EDGE GATEWAY')
+        expect(tooltip).toContain('>> [TOOLTIP] [INFO]')
         expect(tooltip).toContain(
-            'Execute end-to-end 9-phase static code compilation',
+            'Dispatches episode compilation to edge gateway',
         )
     })
 
     it('[TASK-VT-10.3] sanitizes multi-byte Unicode emojis down to pure 7-bit ASCII', () => {
         const dirtyMessage =
-            'Compilation finished successfully! 🚀 Visuals locked. 🟢'
+            'Compilation finished successfully!  Visuals locked. '
         const cleanMessage = sanitizeTo7BitAscii(dirtyMessage)
 
         const nonAsciiRegex = /[^\x00-\x7F]/

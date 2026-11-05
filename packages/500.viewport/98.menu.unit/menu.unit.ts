@@ -1,14 +1,14 @@
-import { MenuModel } from './menu.model'
-import { menuReducer } from './menu.reduce'
-import * as Act from './menu.action'
-import * as Buzz from './menu.buzzer'
+import { MenuModel } from './menu.model.js'
+import { menuReducer } from './menu.reduce.js'
+import * as Act from './menu.action.js'
+import * as Buzz from './menu.buzzer.js'
 
 export class MenuUnit {
     public model: MenuModel = new MenuModel()
 
     constructor(state?: any) {}
 
-    public reduce(state: MenuModel, action: Act.MenuActions): MenuModel {
+    public reduce(state: MenuModel, action: Act.MenuActions): any {
         return menuReducer(state, action)
     }
 

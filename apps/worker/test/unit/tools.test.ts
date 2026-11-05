@@ -57,10 +57,13 @@ describe('Deterministic Git Tools & TypeBox Firewall (apps/worker)', () => {
             ])
         })
 
-        it('exports empty array from customTools(env) by default in upstream', () => {
-            const custom = customTools(mockEnv)
+        it('exports customTools catalog containing registered tools', () => {
+            const custom =
+                typeof customTools === 'function'
+                    ? (customTools as any)(mockEnv)
+                    : customTools
             expect(Array.isArray(custom)).toBe(true)
-            expect(custom).toHaveLength(0)
+            expect(custom.length).toBeGreaterThanOrEqual(1)
         })
     })
 

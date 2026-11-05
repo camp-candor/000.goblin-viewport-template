@@ -1,5 +1,5 @@
-import * as Act from './bus.action'
-import { BusModel } from './bus.model'
+import * as Act from './bus.action.js'
+import { BusModel } from './bus.model.js'
 
 export function busReducer(
     state: BusModel = new BusModel(),

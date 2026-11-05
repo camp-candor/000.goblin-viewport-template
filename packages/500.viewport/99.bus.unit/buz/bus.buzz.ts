@@ -1,5 +1,5 @@
-import { BusBit } from '../fce/bus.bit'
-import { TelemetryLogPacket } from '../fce/bus.interface'
+import { BusBit } from '../fce/bus.bit.js'
+import { TelemetryLogPacket } from '../fce/bus.interface.js'
 
 /**
  * [TASK-VT-10.3] Pure 7-Bit ASCII Log Sanitizer.
@@ -12,12 +12,30 @@ export const sanitizeTo7BitAscii = (text: string): string => {
 }
 
 /**
- * Formats a telemetry log packet into a pure 7-bit ASCII status line.
+ * Formats a telemetry log packet or discrete parameters into a pure 7-bit ASCII status line.
  */
-export const formatTelemetryLine = (packet: TelemetryLogPacket): string => {
-    const token = packet.level === 'ERROR' ? '[FAIL]' : '[OK]'
-    const cleanMsg = sanitizeTo7BitAscii(packet.message)
-    return `>> ${token} [${packet.topic}] ${cleanMsg}`
+export function formatTelemetryLine(
+    arg0: string | TelemetryLogPacket,
+    arg1?: string,
+    arg2?: string,
+): string {
+    if (typeof arg0 === 'string') {
+        const tag = sanitizeTo7BitAscii(arg0)
+        const sceneId = sanitizeTo7BitAscii(arg1 || '')
+        const msg = sanitizeTo7BitAscii(arg2 || '')
+        if (sceneId) {
+            return `>> [${tag}] [${sceneId}] ${msg}`
+        }
+        return `>> [${tag}] ${msg}`
+    } else {
+        const packet = arg0
+        const token = packet.level === 'ERROR' ? '[FAIL]' : '[OK]'
+        const cleanMsg = sanitizeTo7BitAscii(packet.message)
+        const tag = sanitizeTo7BitAscii(
+            packet.topic || packet.tag || 'VIEWPORT',
+        )
+        return `>> ${token} [${tag}] ${cleanMsg}`
+    }
 }
 
 /**
@@ -25,8 +43,25 @@ export const formatTelemetryLine = (packet: TelemetryLogPacket): string => {
  * Emits telemetry directly to the right-hand cns00 Blessed console box
  * via LIBRARY bus, or falls back to standard stdout during headless test runs.
  */
-export const routeTelemetryToConsole = (packet: TelemetryLogPacket): string => {
-    const formattedLine = formatTelemetryLine(packet)
+export const routeTelemetryToConsole = (
+    packetOrTag:
+        | string
+        | TelemetryLogPacket
+        | { topic?: string; level?: string; message: string; tag?: string },
+    sceneId?: string,
+    message?: string,
+): string => {
+    let formattedLine: string
+    if (typeof packetOrTag === 'string') {
+        if (typeof sceneId === 'string') {
+            formattedLine = formatTelemetryLine(packetOrTag, sceneId, message)
+        } else {
+            formattedLine = sanitizeTo7BitAscii(packetOrTag)
+        }
+    } else {
+        formattedLine = formatTelemetryLine(packetOrTag as any)
+    }
+
     const lib = (globalThis as any).LIBRARY
 
     if (lib && typeof lib.hunt === 'function') {

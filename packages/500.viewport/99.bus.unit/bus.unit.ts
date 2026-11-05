@@ -1,7 +1,7 @@
-import { BusModel } from './bus.model'
-import { busReducer } from './bus.reduce'
-import * as Act from './bus.action'
-import * as Buzz from './bus.buzzer'
+import { BusModel } from './bus.model.js'
+import { busReducer } from './bus.reduce.js'
+import * as Act from './bus.action.js'
+import * as Buzz from './bus.buzzer.js'
 
 export class BusUnit {
     public model: BusModel = new BusModel()
