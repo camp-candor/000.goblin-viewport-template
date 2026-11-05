@@ -4,10 +4,11 @@ import ModBit from '../fce/modBit.js'
 
 import State from '../../99.core/state.js'
 
-import * as ActCol from '../../97.collect.unit/collect.action.js'
-import * as ActMod from '../model.action.js'
+var dat
 
-var bit, dat
+// NOTE: 97.collect.unit was repurposed as the AST harvester in Phase 5 and no
+// longer backs a generic collect-store (READ/WRITE/REMOVE/LIST_COLLECT and
+// clcBit are retired). These buzzers resolve locally against the bale payload.
 
 export const initModel = (cpy: ModelModel, bal: ModelBit, ste: State) => {
     return cpy
@@ -20,14 +21,9 @@ export const updateModel = (cpy: ModelModel, bal: ModelBit, ste: State) => {
 
 export const readModel = async (cpy: ModelModel, bal: ModelBit, ste: State) => {
     if (bal.idx == null) bal.idx = 'mod00'
+    if (bal.dat == null) bal.dat = {}
 
-    // The READ_COLLECT action is smart: it ensures data exists by attempting a write/create if not found.
-    bit = await ste.hunt(ActCol.READ_COLLECT, {
-        idx: bal.idx,
-        bit: ActMod.CREATE_MODEL,
-    })
-
-    bal.slv({ modBit: { idx: 'read-model', dat: bit.clcBit.dat } })
+    bal.slv({ modBit: { idx: 'read-model', dat: bal.dat } })
     return cpy
 }
 
@@ -38,12 +34,7 @@ export const writeModel = async (
 ) => {
     if (bal.dat == null) bal.dat = {}
 
-    bit = await ste.hunt(ActCol.WRITE_COLLECT, {
-        idx: bal.idx,
-        dat: bal.dat,
-        bit: ActMod.CREATE_MODEL,
-    })
-    dat = bit.clcBit.dat
+    dat = bal.dat
     bal.slv({ modBit: { idx: 'write-model', dat } })
     return cpy
 }
@@ -53,12 +44,9 @@ export const removeModel = async (
     bal: ModelBit,
     ste: State,
 ) => {
-    bit = await ste.hunt(ActCol.REMOVE_COLLECT, {
-        idx: bal.idx,
-        bit: ActMod.DELETE_MODEL,
-    })
+    if (bal.dat == null) bal.dat = {}
 
-    bal.slv({ modBit: { idx: 'remove-model', dat: bit.clcBit.dat } })
+    bal.slv({ modBit: { idx: 'remove-model', dat: bal.dat } })
     return cpy
 }
 
@@ -76,10 +64,6 @@ export const createModel = (cpy: ModelModel, bal: ModelBit, ste: State) => {
 }
 
 export const listModel = async (cpy: ModelModel, bal: ModelBit, ste: State) => {
-    bit = await ste.hunt(ActCol.LIST_COLLECT, {
-        val: bal.val,
-        bit: ActMod.CREATE_MODEL,
-    })
-    bal.slv({ modBit: { idx: 'list-model', lst: bit.clcBit.lst } })
+    bal.slv({ modBit: { idx: 'list-model', lst: [] } })
     return cpy
 }

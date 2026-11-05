@@ -1,5 +1,4 @@
 import * as ActBus from '../../99.bus.unit/bus.action.js'
-import * as ActCol from '../../97.collect.unit/collect.action.js'
 
 import { BusModel } from '../bus.model.js'
 import BusBit from '../fce/bus.bit.js'
@@ -8,6 +7,23 @@ import S from 'string'
 import clone from 'clone-deep'
 
 var lst, idx, bit, src, dat, dex
+
+// NOTE: 97.collect.unit was repurposed as the AST harvester in Phase 5 and no
+// longer backs a generic client store (WRITE/READ/FETCH_COLLECT and clcBit are
+// retired). Named MQTT clients are held in this module-local registry instead.
+var clientRegistry: Record<string, any> = {}
+
+const readClient = (key: string) => {
+    const client = clientRegistry[key]
+    if (client == null) {
+        throw new Error(
+            'ERR_BUS_CLIENT_NOT_FOUND: No MQTT client registered for [' +
+                key +
+                '].',
+        )
+    }
+    return client
+}
 
 export const initBus = (cpy: BusModel, bal: BusBit, ste: State) => {
     cpy.actList = []
@@ -52,13 +68,13 @@ export const initBus = (cpy: BusModel, bal: BusBit, ste: State) => {
         }
 
         lst.forEach(async (a) => {
-            bit = await ste.hunt(ActCol.WRITE_COLLECT, {
+            bit = await ste.hunt(ActBus.CREATE_BUS, {
                 idx: a.idx,
                 src: a.src,
-                bit: ActBus.CREATE_BUS,
             })
 
-            var client = bit.clcBit.dat
+            var client = bit.busBit.dat
+            clientRegistry[a.idx] = client
 
             client.on('message', (tpc, msg) => {
                 messageBus(cpy, { idx: tpc, src: msg, bit: a.idx }, ste)
@@ -104,11 +120,7 @@ export const openBus = async (cpy: BusModel, bal: BusBit, ste: State) => {
     var client = cpy.client
 
     if (bal.bit != null) {
-        bit = await ste.hunt(ActCol.READ_COLLECT, {
-            idx: bal.bit,
-            bit: ActBus.CREATE_BUS,
-        })
-        client = bit.clcBit.dat
+        client = readClient(bal.bit)
     }
 
     out.forEach((a) => {
@@ -136,11 +148,7 @@ export const messageBus = async (cpy: BusModel, bal: BusBit, ste: State) => {
     var client = cpy.client
 
     if (bal.bit != null) {
-        bit = await ste.hunt(ActCol.READ_COLLECT, {
-            idx: bal.bit,
-            bit: ActBus.CREATE_BUS,
-        })
-        client = bit.clcBit.dat
+        client = readClient(bal.bit)
     }
 
     if (idx.includes(cpy.responseSuffix) == true) {
@@ -179,16 +187,17 @@ export const updateBus = async (cpy: BusModel, bal: BusBit, ste: State) => {
     var client = cpy.client
 
     if (bal.bit != null) {
-        bit = await ste.hunt(ActCol.READ_COLLECT, {
-            idx: bal.bit,
-            bit: ActBus.CREATE_BUS,
-        })
-        client = bit.clcBit.dat
+        client = readClient(bal.bit)
     }
 
     if (client == null && bal.bit == null) {
-        bit = await ste.hunt(ActCol.FETCH_COLLECT, { bit: ActBus.CREATE_BUS })
-        client = bit.clcBit.dat
+        const names = Object.keys(clientRegistry)
+        if (names.length === 0) {
+            throw new Error(
+                'ERR_BUS_NO_CLIENTS: No MQTT client connected and none registered.',
+            )
+        }
+        client = clientRegistry[names[0]]
     }
 
     var responseIDX = bal.idx + cpy.responseSuffix

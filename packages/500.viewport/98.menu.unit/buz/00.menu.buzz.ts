@@ -1,5 +1,6 @@
 /* eslint-disable */
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import * as ActMnu from '../menu.action.js'
 //import * as ActAgt from '../../00.agent.unit/agent.action.js';
@@ -20,6 +21,11 @@ import {
     validateVisualManifest,
     resolveCharacterVariant,
 } from '../../06.coordinates.unit/buz/coordinates.buzz.js'
+import {
+    planEpisodeHarvest,
+    executeHarvestExtraction,
+} from '../../97.collect.unit/buz/collect.buzz.js'
+import { auditStorageEnvelope } from '../../03.assets.unit/buz/assets.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -48,6 +54,7 @@ const COMPILE_EPISODE_WORKSPACE = 'COMPILE EPISODE WORKSPACE'
 const QUANTIZE_TIMELINE = 'QUANTIZE TIMELINE'
 const BAKE_STATIC_COMPOSITION = 'BAKE STATIC COMPOSITION'
 const RESOLVE_VISUAL_MANIFEST = 'RESOLVE VISUAL MANIFEST'
+const HARVEST_EPISODE_ASSETS = 'HARVEST EPISODE ASSETS'
 
 export const resolveRepoRoot = (): string => {
     let curr = process.cwd()
@@ -326,6 +333,145 @@ export const resolveVisualManifestJourney = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
 }
 
+export const harvestEpisodeAssetsJourney = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [HARVEST] Parsing dialogue AST for Episode...',
+    })
+
+    let vaultDir = ''
+    let destDir = ''
+    try {
+        vaultDir = fs.mkdtempSync(path.join(os.tmpdir(), 'viewport-vault-'))
+        destDir = fs.mkdtempSync(path.join(os.tmpdir(), 'viewport-stage-'))
+
+        fs.mkdirSync(path.join(vaultDir, 'environments', 'env_swamp'), {
+            recursive: true,
+        })
+        fs.writeFileSync(
+            path.join(vaultDir, 'environments', 'env_swamp', 'manifest.json'),
+            JSON.stringify({
+                locationId: 'env_swamp',
+                plates: { standard: 'swamp_matte.png' },
+            }),
+        )
+        fs.writeFileSync(
+            path.join(vaultDir, 'environments', 'env_swamp', 'swamp_matte.png'),
+            'DUMMY_IMAGE_DATA_1',
+        )
+
+        fs.mkdirSync(path.join(vaultDir, 'characters', 'char_bog'), {
+            recursive: true,
+        })
+        fs.writeFileSync(
+            path.join(vaultDir, 'characters', 'char_bog', 'manifest.json'),
+            JSON.stringify({
+                characterId: 'char_bog',
+                base_states: { idle: { file: 'bog_idle.png' } },
+                condition_variants: {
+                    humiliated: { file: 'bog_humiliated.png' },
+                    enraged: null,
+                },
+                mouth_shapes: {
+                    closed: 'mouth_closed.png',
+                    wide: 'mouth_wide.png',
+                },
+            }),
+        )
+        for (const f of [
+            'bog_idle.png',
+            'bog_humiliated.png',
+            'mouth_closed.png',
+            'mouth_wide.png',
+        ]) {
+            fs.writeFileSync(
+                path.join(vaultDir, 'characters', 'char_bog', f),
+                `DUMMY_IMAGE_DATA_${f}`,
+            )
+        }
+
+        const ast = {
+            episode_id: 'ep040',
+            location_id: 'env_swamp',
+            rounds: [
+                {
+                    speaker: 'char_bog',
+                    emotion: 'humiliated',
+                    phonemes: [
+                        { time_ms: 0, viseme: 'closed' },
+                        { time_ms: 100, viseme: 'wide' },
+                    ],
+                },
+            ],
+        }
+
+        const plan = planEpisodeHarvest(ast as any, vaultDir)
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [HARVEST] Staged environment plate:',
+        })
+
+        if (plan.characterSpritePaths.length === 0) {
+            throw new Error(
+                'ERR_EMPTY_CHARACTER_HARVEST: No character variants cherry-picked.',
+            )
+        }
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [HARVEST] Cherry-picked character variants',
+        })
+
+        if (plan.visemeSpritePaths.length === 0) {
+            throw new Error(
+                'ERR_EMPTY_VISEME_HARVEST: No mouth visemes cherry-picked.',
+            )
+        }
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [HARVEST] Cherry-picked mouth visemes',
+        })
+
+        const receipt = executeHarvestExtraction(plan, vaultDir, destDir)
+        if (receipt.status !== 'SUCCESS') {
+            throw new Error(
+                'ERR_HARVEST_FAILED: Asset extraction receipt not SUCCESS.',
+            )
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [ENVELOPE] Running Zero-Byte Poison Sentinel...',
+        })
+
+        const envelope = auditStorageEnvelope(destDir)
+        if (!envelope.nominalBudgetPassed) {
+            throw new Error(
+                'ERR_NOMINAL_BUDGET_FAILED: Staged payload exceeds 100MB nominal budget.',
+            )
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [ENVELOPE] Asset staging audited. Nominal budget PASSED.',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [OK] [HARVEST] Cherry-picked assets for Episode.',
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [HARVEST] Invariant violation: ${err.message}`,
+        })
+    } finally {
+        if (vaultDir) fs.rmSync(vaultDir, { recursive: true, force: true })
+        if (destDir) fs.rmSync(destDir, { recursive: true, force: true })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
 
@@ -369,6 +515,7 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         QUANTIZE_TIMELINE,
         BAKE_STATIC_COMPOSITION,
         RESOLVE_VISUAL_MANIFEST,
+        HARVEST_EPISODE_ASSETS,
         'ROOT MENU',
     ]
 
@@ -441,6 +588,10 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
 
         case RESOLVE_VISUAL_MANIFEST:
             await resolveVisualManifestJourney()
+            break
+
+        case HARVEST_EPISODE_ASSETS:
+            await harvestEpisodeAssetsJourney()
             break
 
         case 'ROOT MENU':
