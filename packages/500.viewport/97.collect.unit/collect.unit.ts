@@ -1,6 +1,16 @@
-import State from '../99.core/state.js'
+import { CollectModel } from './collect.model';
+import { collectReducer } from './collect.reduce';
+import * as Act from './collect.action';
+import * as Buzz from './collect.buzzer';
 
-export default class CollectUnit {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-    constructor(state: State) {}
+export class CollectUnit {
+  public model: CollectModel = new CollectModel();
+
+  public reduce(state: CollectModel, action: Act.CollectActions): CollectModel {
+    return collectReducer(state, action);
+  }
+
+  public harvestEpisodeAssets(ste: any, bale: any, bal: any): void {
+    Buzz.runHarvestEpisodeAssetsBuzz(ste, bale, bal);
+  }
 }
