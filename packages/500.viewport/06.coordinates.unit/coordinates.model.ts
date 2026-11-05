@@ -1,8 +1,8 @@
-import Coordinates from './fce/coordinates.interface'
-import CoordinatesBit from './fce/coordinates.interface'
+import { VisualAssetManifest, CoordinatesReceipt } from './fce/coordinates.interface';
 
-export class CoordinatesModel implements Coordinates {
-    //idx:string;
-    //coordinatesBitList: CoordinatesBit[] = [];
-    //coordinatesBits: any = {};
+export class CoordinatesModel {
+  idx: string = '06.coordinates.unit';
+  activeManifest?: VisualAssetManifest;
+  lastReceipt?: CoordinatesReceipt;
+  lastStatus: string = 'IDLE';
 }
