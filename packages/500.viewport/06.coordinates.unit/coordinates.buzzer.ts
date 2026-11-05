@@ -1,2 +1,1 @@
-export { initCoordinates } from './buz/coordinates.buzz'
-export { updateCoordinates } from './buz/coordinates.buzz'
+export { runParseVisualManifestBuzz, runResolveVariantBuzz } from './buz/00.coordinates.buzz';
