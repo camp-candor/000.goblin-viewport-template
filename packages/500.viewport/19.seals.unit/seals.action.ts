@@ -1,18 +1,22 @@
-import { Action } from '../99.core/interface/action.interface'
-import SealsBit from './fce/seals.bit'
+import { SealsBit } from './fce/seals.bit';
 
-// Seals actions
+export const INIT_SEALS = 'seals:init';
+export const EMIT_SEALED_COMPOSITION = 'seals:emit_sealed_composition';
+export const ARBITRATE_CLOBBER = 'seals:arbitrate_clobber';
 
-export const INIT_SEALS = '[Seals action] Init Seals'
-export class InitSeals implements Action {
-    readonly type = INIT_SEALS
-    constructor(public bale: SealsBit) {}
+export class InitSeals {
+  readonly type = INIT_SEALS;
+  constructor(public bale: SealsBit) {}
 }
 
-export const UPDATE_SEALS = '[Seals action] Update Seals'
-export class UpdateSeals implements Action {
-    readonly type = UPDATE_SEALS
-    constructor(public bale: SealsBit) {}
+export class EmitSealedComposition {
+  readonly type = EMIT_SEALED_COMPOSITION;
+  constructor(public bale: SealsBit) {}
 }
 
-export type Actions = InitSeals | UpdateSeals
+export class ArbitrateClobber {
+  readonly type = ARBITRATE_CLOBBER;
+  constructor(public bale: SealsBit) {}
+}
+
+export type SealsActions = InitSeals | EmitSealedComposition | ArbitrateClobber;
