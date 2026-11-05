@@ -14,7 +14,7 @@ import FoleyUnit from './10.foley.unit/foley.unit'
 import GeneratorUnit from './11.generator.unit/generator.unit'
 import GreenscreenUnit from './12.greenscreen.unit/greenscreen.unit'
 import LifecycleUnit from './13.lifecycle.unit/lifecycle.unit'
-import ManifestUnit from './14.manifest.unit/manifest.unit'
+import { ManifestUnit } from './14.manifest.unit/manifest.unit'
 import MathsUnit from './15.maths.unit/maths.unit'
 import PuppetUnit from './16.puppet.unit/puppet.unit'
 import RemotionUnit from './17.remotion.unit/remotion.unit'
@@ -161,7 +161,7 @@ export const reducer: any = {
     generator: reduceFromGenerator.reducer,
     greenscreen: reduceFromGreenscreen.reducer,
     lifecycle: reduceFromLifecycle.reducer,
-    manifest: reduceFromManifest.reducer,
+    manifest: reduceFromManifest.manifestReducer,
     maths: reduceFromMaths.reducer,
     puppet: reduceFromPuppet.reducer,
     remotion: reduceFromRemotion.reducer,

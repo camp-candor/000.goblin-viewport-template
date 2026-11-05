@@ -1,22 +1,18 @@
-import clone from 'clone-deep'
-import * as Act from './manifest.action'
-import { ManifestModel } from './manifest.model'
-import * as Buzz from './manifest.buzzer'
-import State from '../99.core/state'
+import * as Act from './manifest.action';
+import { ManifestModel } from './manifest.model';
 
-export function reducer(
-    model: ManifestModel = new ManifestModel(),
-    act: Act.Actions,
-    state?: State,
-) {
-    switch (act.type) {
-        case Act.UPDATE_MANIFEST:
-            return Buzz.updateManifest(clone(model), act.bale, state)
-
-        case Act.INIT_MANIFEST:
-            return Buzz.initManifest(clone(model), act.bale, state)
-
-        default:
-            return model
+export function manifestReducer(
+  state: ManifestModel = new ManifestModel(),
+  action: Act.ManifestActions
+): ManifestModel {
+  switch (action.type) {
+    case Act.INIT_MANIFEST: {
+      return { ...state, lastStatus: 'INITIALIZED' };
     }
+    case Act.MINT_PROVENANCE_LOCKFILE: {
+      return { ...state, lastStatus: 'LOCKED' };
+    }
+    default:
+      return state;
+  }
 }
