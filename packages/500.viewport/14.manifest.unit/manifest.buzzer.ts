@@ -1,2 +1,1 @@
-export { initManifest } from './buz/manifest.buzz'
-export { updateManifest } from './buz/manifest.buzz'
+export { runMintProvenanceLockfileBuzz } from './buz/00.manifest.buzz';

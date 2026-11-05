@@ -1,8 +1,7 @@
-import Manifest from './fce/manifest.interface'
-import ManifestBit from './fce/manifest.interface'
+import { ManifestReceipt } from './fce/manifest.interface';
 
-export class ManifestModel implements Manifest {
-    //idx:string;
-    //manifestBitList: ManifestBit[] = [];
-    //manifestBits: any = {};
+export default class ManifestModel {
+  idx: string = '14.manifest.unit';
+  lastReceipt?: ManifestReceipt;
+  lastStatus: string = 'IDLE';
 }
