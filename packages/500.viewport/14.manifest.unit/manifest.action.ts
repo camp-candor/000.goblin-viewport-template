@@ -1,18 +1,26 @@
-import { Action } from '../99.core/interface/action.interface'
-import ManifestBit from './fce/manifest.bit'
+import { Action } from '../99.core/interface/action.interface';
+import ManifestBit from './fce/manifest.bit';
 
-// Manifest actions
+export const INIT_MANIFEST = 'manifest:init';
+export const MINT_PROVENANCE_LOCKFILE = 'manifest:mint_provenance_lockfile';
+export const VERIFY_TOOLCHAIN_ENVIRONMENT = 'manifest:verify_toolchain_environment';
 
-export const INIT_MANIFEST = '[Manifest action] Init Manifest'
 export class InitManifest implements Action {
-    readonly type = INIT_MANIFEST
-    constructor(public bale: ManifestBit) {}
+  readonly type = INIT_MANIFEST;
+  constructor(public bale: ManifestBit) {}
 }
 
-export const UPDATE_MANIFEST = '[Manifest action] Update Manifest'
-export class UpdateManifest implements Action {
-    readonly type = UPDATE_MANIFEST
-    constructor(public bale: ManifestBit) {}
+export class MintProvenanceLockfile implements Action {
+  readonly type = MINT_PROVENANCE_LOCKFILE;
+  constructor(public bale: ManifestBit) {}
 }
 
-export type Actions = InitManifest | UpdateManifest
+export class VerifyToolchainEnvironment implements Action {
+  readonly type = VERIFY_TOOLCHAIN_ENVIRONMENT;
+  constructor(public bale: ManifestBit) {}
+}
+
+export type Actions =
+  | InitManifest
+  | MintProvenanceLockfile
+  | VerifyToolchainEnvironment;
