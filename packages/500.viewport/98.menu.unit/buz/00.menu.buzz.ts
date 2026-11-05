@@ -31,6 +31,11 @@ import {
     generateShotCameraWrapperCode,
     generateOpticalStackJsx,
 } from '../../20.sourcebaking.unit/buz/opticalStack.buzz.js'
+import {
+    normalizeLf,
+    computeBodyChecksum,
+    arbitrateAndEmitComposition,
+} from '../../19.seals.unit/buz/seals.buzz.js'
 
 import type { MenuModel } from '../menu.model.js'
 import type MenuBit from '../fce/menu.bit.js'
@@ -62,6 +67,7 @@ const RESOLVE_VISUAL_MANIFEST = 'RESOLVE VISUAL MANIFEST'
 const HARVEST_EPISODE_ASSETS = 'HARVEST EPISODE ASSETS'
 const VENDOR_PRESENTATION_RIGS = 'VENDOR PRESENTATION RIGS'
 const GENERATE_OPTICAL_SCOPES = 'GENERATE OPTICAL SCOPES'
+const SEAL_COMPOSITION_ARTIFACT = 'SEAL COMPOSITION ARTIFACT'
 
 export const resolveRepoRoot = (): string => {
     let curr = process.cwd()
@@ -623,6 +629,115 @@ export const generateOpticalScopesJourney = async () => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
 }
 
+export const sealCompositionArtifactJourney = async () => {
+    await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+        idx: 'cns00',
+        src: '>> [SEAL] Normalizing LF line-endings for Episode...',
+    })
+
+    let sealsDir = ''
+    try {
+        sealsDir = fs.mkdtempSync(path.join(os.tmpdir(), 'viewport-seals-'))
+
+        // CRLF payload proves POSIX normalization precedes hashing
+        const rawBodySource =
+            'export const Episode_040: React.FC = () => {\r\n  return <div>BOG</div>;\r\n};\r\n'
+        const normalizedBody = normalizeLf(rawBodySource)
+        if (normalizedBody.includes('\r')) {
+            throw new Error(
+                'ERR_SEAL_NORMALIZE_FAILED: Carriage returns survived LF normalization.',
+            )
+        }
+
+        const checksum = computeBodyChecksum(normalizedBody)
+        if (!/^[a-f0-9]{64}$/.test(checksum)) {
+            throw new Error(
+                'ERR_SEAL_DIGEST_FAILED: Body checksum is not a SHA-256 hex digest.',
+            )
+        }
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [SEAL] Computed SHA-256 body checksum: ${checksum.substring(0, 12)}...`,
+        })
+
+        // Seed the initial sealed artifact, then simulate a manual director edit
+        const targetFile = path.join(sealsDir, 'Episode_040.tsx')
+        const seed = arbitrateAndEmitComposition({
+            targetFilePath: targetFile,
+            seriesSlug: 'under-the-floorboards',
+            episodeId: '040',
+            rawBodySource: normalizedBody,
+        })
+        if (seed.status !== 'WRITTEN') {
+            throw new Error(
+                'ERR_SEAL_SEED_FAILED: Initial sealed artifact was not WRITTEN.',
+            )
+        }
+        fs.appendFileSync(targetFile, '// manual director edit\n', 'utf8')
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [SEAL] Inspecting existing file: ${targetFile}`,
+        })
+
+        const arbitration = arbitrateAndEmitComposition({
+            targetFilePath: targetFile,
+            seriesSlug: 'under-the-floorboards',
+            episodeId: '040',
+            rawBodySource: normalizedBody,
+        })
+        if (
+            arbitration.status !== 'REFUSED_EMITTED_CANDIDATE' ||
+            !arbitration.divergedFromStamped
+        ) {
+            throw new Error(
+                'ERR_SEAL_DIVERGENCE_MISSED: Manual edit was not trapped to a candidate draft.',
+            )
+        }
+        if (!fs.existsSync(arbitration.writtenPath)) {
+            throw new Error(
+                'ERR_SEAL_CANDIDATE_MISSING: Candidate draft was not emitted on refusal.',
+            )
+        }
+
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: '>> [REFUSAL] Checksum divergence detected. Manual edits preserved.',
+        })
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [CANDIDATE] Emitted candidate draft: ${arbitration.writtenPath}`,
+        })
+
+        // Clean-path control: a fresh target seals without refusal
+        const cleanTarget = path.join(sealsDir, 'Episode_041.tsx')
+        const clean = arbitrateAndEmitComposition({
+            targetFilePath: cleanTarget,
+            seriesSlug: 'under-the-floorboards',
+            episodeId: '041',
+            rawBodySource: normalizedBody,
+        })
+        if (clean.status !== 'WRITTEN') {
+            throw new Error(
+                'ERR_SEAL_CLEAN_PATH_FAILED: Fresh target was not WRITTEN.',
+            )
+        }
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [OK] [SEAL] Stamped and sealed Episode 041 (checksum: ${clean.checksum.substring(0, 12)}...).`,
+        })
+    } catch (err: any) {
+        await global.LIBRARY.hunt(UPDATE_CONSOLE, {
+            idx: 'cns00',
+            src: `>> [FAIL] [SEAL] Invariant violation: ${err.message}`,
+        })
+    } finally {
+        if (sealsDir) fs.rmSync(sealsDir, { recursive: true, force: true })
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+}
+
 export const initMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
     if (bal.slv != null) rootSlv = bal.slv
 
@@ -669,6 +784,7 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
         HARVEST_EPISODE_ASSETS,
         VENDOR_PRESENTATION_RIGS,
         GENERATE_OPTICAL_SCOPES,
+        SEAL_COMPOSITION_ARTIFACT,
         'ROOT MENU',
     ]
 
@@ -753,6 +869,10 @@ export const updateMenu = async (cpy: MenuModel, bal: MenuBit, ste: State) => {
 
         case GENERATE_OPTICAL_SCOPES:
             await generateOpticalScopesJourney()
+            break
+
+        case SEAL_COMPOSITION_ARTIFACT:
+            await sealCompositionArtifactJourney()
             break
 
         case 'ROOT MENU':
