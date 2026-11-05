@@ -1,2 +1,1 @@
-export { initSeals } from './buz/seals.buzz'
-export { updateSeals } from './buz/seals.buzz'
+export { runEmitSealedCompositionBuzz } from './buz/00.seals.buzz';
