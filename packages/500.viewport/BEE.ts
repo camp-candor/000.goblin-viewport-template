@@ -46,7 +46,7 @@ import { CoordinatesModel } from './06.coordinates.unit/coordinates.model'
 import Dialogue from './07.dialogue.unit/fce/dialogue.interface'
 import { DialogueModel } from './07.dialogue.unit/dialogue.model'
 import Edgecontrol from './08.edgecontrol.unit/fce/edgecontrol.interface'
-import { EdgecontrolModel } from './08.edgecontrol.unit/edgecontrol.model'
+import { EdgeControlModel } from './08.edgecontrol.unit/edgecontrol.model'
 import Exposuresheet from './09.exposuresheet.unit/fce/exposuresheet.interface'
 import { ExposuresheetModel } from './09.exposuresheet.unit/exposuresheet.model'
 import Foley from './10.foley.unit/fce/foley.interface'
@@ -186,7 +186,7 @@ export default class UnitData implements Model {
     camera: Camera = new CameraModel()
     coordinates: Coordinates = new CoordinatesModel()
     dialogue: Dialogue = new DialogueModel()
-    edgecontrol: Edgecontrol = new EdgecontrolModel()
+    edgecontrol: Edgecontrol = new EdgeControlModel()
     exposuresheet: Exposuresheet = new ExposuresheetModel()
     foley: Foley = new FoleyModel()
     generator: Generator = new GeneratorModel()

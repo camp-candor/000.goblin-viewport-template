@@ -1,8 +1,10 @@
-import Edgecontrol from './fce/edgecontrol.interface'
-import EdgecontrolBit from './fce/edgecontrol.interface'
+import { EdgeControlModel as EdgeControlInterface, DispatchErrorPayload } from './fce/edgecontrol.interface'
 
-export class EdgecontrolModel implements Edgecontrol {
-    //idx:string;
-    //edgecontrolBitList: EdgecontrolBit[] = [];
-    //edgecontrolBits: any = {};
+export class EdgeControlModel implements EdgeControlInterface {
+    idx: string = '08.edgecontrol'
+    status: 'IDLE' = 'IDLE'
+    activeIntent: null = null
+    latestReceipt: null = null
+    errorHistory: readonly DispatchErrorPayload[] = []
+    monotonicSequence: number = 0
 }
