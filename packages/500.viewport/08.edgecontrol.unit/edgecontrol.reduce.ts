@@ -1,22 +1,64 @@
-import clone from 'clone-deep'
-import * as Act from './edgecontrol.action'
-import { EdgecontrolModel } from './edgecontrol.model'
-import * as Buzz from './edgecontrol.buzzer'
-import State from '../99.core/state'
 
-export function reducer(
-    model: EdgecontrolModel = new EdgecontrolModel(),
-    act: Act.Actions,
-    state?: State,
-) {
-    switch (act.type) {
-        case Act.UPDATE_EDGECONTROL:
-            return Buzz.updateEdgecontrol(clone(model), act.bale, state)
+import type { EdgeControlModel } from './fce/edgecontrol.interface.js';
+import type { EdgeControlActions } from './edgecontrol.action.js';
+import {
+  INIT_EDGE_CONTROL,
+  DISPATCH_COMPILE_EPISODE,
+  RECEIVE_DISPATCH_RECEIPT,
+  HANDLE_DISPATCH_ERROR,
+  RESET_DISPATCH_STATE,
+} from './edgecontrol.action.js';
+import { INITIAL_EDGE_CONTROL_STATE } from '../96.model.unit/fce/dispatch-state.interface.js';
 
-        case Act.INIT_EDGECONTROL:
-            return Buzz.initEdgecontrol(clone(model), act.bale, state)
+export function edgeControlReducer(
+  state: EdgeControlModel = INITIAL_EDGE_CONTROL_STATE,
+  action?: EdgeControlActions
+): EdgeControlModel {
+  if (!action) return state;
 
-        default:
-            return model
+  switch (action.type) {
+    case INIT_EDGE_CONTROL: {
+      return Object.freeze({
+        ...state,
+        status: 'IDLE',
+      });
     }
+
+    case DISPATCH_COMPILE_EPISODE: {
+      return Object.freeze({
+        ...state,
+        status: 'DISPATCHED',
+        activeIntent: action.payload,
+        monotonicSequence: state.monotonicSequence + 1,
+      });
+    }
+
+    case RECEIVE_DISPATCH_RECEIPT: {
+      return Object.freeze({
+        ...state,
+        status: action.payload.status,
+        latestReceipt: action.payload,
+        monotonicSequence: state.monotonicSequence + 1,
+      });
+    }
+
+    case HANDLE_DISPATCH_ERROR: {
+      return Object.freeze({
+        ...state,
+        status: 'FAILED',
+        errorHistory: Object.freeze([...state.errorHistory, action.payload]),
+        monotonicSequence: state.monotonicSequence + 1,
+      });
+    }
+
+    case RESET_DISPATCH_STATE: {
+      return Object.freeze({
+        ...INITIAL_EDGE_CONTROL_STATE,
+        monotonicSequence: state.monotonicSequence + 1,
+      });
+    }
+
+    default:
+      return state;
+  }
 }
