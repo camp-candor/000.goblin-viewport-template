@@ -18,6 +18,7 @@ export default tseslint.config(
             '**/*.d.ts',
             '**/.wrangler/**',
             '**/apps/995.library/**',
+            'generator/**',
         ],
     },
 
