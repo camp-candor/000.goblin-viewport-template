@@ -1,3 +1,6 @@
+import { unrollFoleySequencesJsx } from '../../10.foley.unit/buz/foley.buzz.js'
+import { unrollAmbientTrackJsx, SpeechWindowSpec } from '../../02.ambience.unit/buz/ambience.buzz.js'
+
 import { SourceBakingBit } from '../fce/sourcebaking.bit'
 import {
     BakeCompositionInput,
@@ -68,6 +71,9 @@ export const unrollDialogueShots = (
 ): string => {
     return shots
         .map((shot) => {
+            if (!shot.anchorPoint || !shot.mouthBoundingBox) {
+                throw new Error("ERR_MISSING_VISUAL_DATA: anchorPoint and mouthBoundingBox are required in standard visual mode");
+            }
             const projection = projectCoordinatePercentages(
                 shot.anchorPoint.x,
                 shot.anchorPoint.y,
@@ -97,6 +103,20 @@ export const unrollDialogueShots = (
 /**
  * Generates the complete, self-contained React composition file Episode_XXX.tsx.
  */
+
+export const unrollAudioOnlyDialogueShots = (
+    shots: BakeShotPlan[],
+): string => {
+    return shots
+        .map((shot) => {
+            if (!Number.isInteger(shot.fromFrame) || !Number.isInteger(shot.durationInFrames) || shot.fromFrame < 0 || shot.durationInFrames < 0) {
+                throw new Error('ERR_FLOAT_FRAME_BOUNDS: Frame boundaries must be non-negative unquoted integers.')
+            }
+            return `      <Sequence from={${shot.fromFrame}} durationInFrames={${shot.durationInFrames}}><Audio src={staticFile("${shot.audioWavPath}")} volume={1.0} /></Sequence>`
+        })
+        .join('\n')
+}
+
 export const bakeStaticComposition = (
     input: BakeCompositionInput,
 ): BakeReceipt => {
@@ -106,11 +126,64 @@ export const bakeStaticComposition = (
         )
     }
 
+    for (const shot of input.shots) {
+        if (!Number.isInteger(shot.fromFrame) || !Number.isInteger(shot.durationInFrames) || shot.fromFrame < 0 || shot.durationInFrames < 0) {
+            throw new Error('ERR_FLOAT_FRAME_BOUNDS: Frame boundaries must be non-negative unquoted integers.')
+        }
+    }
+
     const canvasWidth = input.canvasWidth ?? CANONICAL_WIDTH
     const canvasHeight = input.canvasHeight ?? CANONICAL_HEIGHT
 
     const lastShot = input.shots[input.shots.length - 1]
     const totalDurationFrames = lastShot.fromFrame + lastShot.durationInFrames
+
+    if (input.audioOnly) {
+        let ambientTrack = '';
+        if (input.ambientWavPath) {
+            const windows: SpeechWindowSpec[] = input.shots.map(s => ({ fromFrame: s.fromFrame, durationInFrames: s.durationInFrames }));
+            ambientTrack = "      " + unrollAmbientTrackJsx(input.ambientWavPath, windows);
+        }
+
+        const dialogueTrack = unrollAudioOnlyDialogueShots(input.shots);
+
+        let foleyTrack = '';
+        if (input.foleyPlacements && input.foleyPlacements.length > 0) {
+            foleyTrack = "      " + unrollFoleySequencesJsx(input.foleyPlacements);
+        }
+
+        const tracks = [ambientTrack, dialogueTrack, foleyTrack].filter(t => t).join('\n');
+
+        const sourceCode = `// @lifecycle: generated
+// @series: ${input.seriesSlug}
+// @episode: ${input.episodeId}
+// @total_frames: ${totalDurationFrames}
+
+import React from 'react';
+import { Composition, Sequence, Audio, staticFile } from 'remotion';
+
+export const Episode_${input.episodeId}: React.FC = () => {
+  return (
+    <div style={{ width: ${canvasWidth}, height: ${canvasHeight}, backgroundColor: '#000000', position: 'relative' }}>
+${tracks}
+    </div>
+  );
+};
+
+export const RemotionRoot: React.FC = () => {
+    return (
+        <Composition id="Episode_${input.episodeId}" component={Episode_${input.episodeId}} durationInFrames={${totalDurationFrames}} fps={24} width={${canvasWidth}} height={${canvasHeight}} />
+    );
+};
+`
+        return {
+            status: 'SUCCESS',
+            episodeId: input.episodeId,
+            totalDurationFrames,
+            shotCount: input.shots.length,
+            sourceCode,
+        }
+    }
 
     const unrolledSequences = unrollDialogueShots(
         input.shots,

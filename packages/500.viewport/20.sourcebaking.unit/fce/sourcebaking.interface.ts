@@ -1,3 +1,5 @@
+import { FoleyPlacementSpec } from '../../10.foley.unit/buz/foley.buzz.js';
+
 export interface CharacterAnchor {
     x: number
     y: number
@@ -19,8 +21,8 @@ export interface BakeShotPlan {
     emotion: string
     dialogueText: string
     audioWavPath: string
-    anchorPoint: CharacterAnchor
-    mouthBoundingBox: BoundingBox
+    anchorPoint?: CharacterAnchor
+    mouthBoundingBox?: BoundingBox
     sidechainDuckingDb?: number
 }
 
@@ -30,6 +32,9 @@ export interface BakeCompositionInput {
     shots: BakeShotPlan[]
     canvasWidth?: number
     canvasHeight?: number
+    audioOnly?: boolean
+    foleyPlacements?: FoleyPlacementSpec[]
+    ambientWavPath?: string
 }
 
 export interface CoordinateProjection {
