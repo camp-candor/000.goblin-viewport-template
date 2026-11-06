@@ -13,6 +13,7 @@
         "npm": ">=10.0.0"
     },
     "scripts": {
+        "generate:episode": "npx tsx generator/generate-episode-repo.ts",
         "//__ DEV & RUNNER _________________________": "",
         "dev": "npm run dev --workspace=@camp_candor/995.library",
         "tui": "npx tsx apps/995.library/run.ts -t pivot",
