@@ -5,6 +5,8 @@ import {
     BakeReceipt,
     CoordinateProjection,
 } from '../fce/sourcebaking.interface'
+import { unrollFoleySequencesJsx } from '../../10.foley.unit/buz/foley.buzz.js'
+import { unrollAmbientTrackJsx, SpeechWindowSpec } from '../../02.ambience.unit/buz/ambience.buzz.js'
 
 export const CANONICAL_WIDTH = 1920
 export const CANONICAL_HEIGHT = 1080
@@ -57,6 +59,24 @@ export const inlineExposureAttributes = (
     return `from={${fromFrame}} durationInFrames={${durationInFrames}} volume={${volume.toFixed(1)}}`
 }
 
+export const unrollAudioOnlyDialogueShots = (shots: BakeShotPlan[]): string => {
+    return shots
+        .map((shot) => {
+            if (!Number.isInteger(shot.fromFrame) || shot.fromFrame < 0 || !Number.isInteger(shot.durationInFrames) || shot.durationInFrames < 0) {
+                throw new Error('ERR_FLOAT_FRAME_BOUNDS: Frame boundaries must be unquoted integers.')
+            }
+
+            const shotNumStr = String(shot.shotIndex).padStart(2, '0')
+            const volumeLevel = shot.sidechainDuckingDb ? 0.2 : 1.0
+
+            return `      {/* SHOT ${shotNumStr} AUDIO-ONLY SEQUENCE */}
+      <Sequence from={${shot.fromFrame}} durationInFrames={${shot.durationInFrames}}>
+        <Audio src={staticFile("${shot.audioWavPath}")} volume={${volumeLevel}} />
+      </Sequence>`
+        })
+        .join('\n\n')
+}
+
 /**
  * [TASK-VT-3.1] Dynamic Array Mapping Eradication.
  * Unrolls shot array into static, unrolled JSX string blocks at compile time.
@@ -68,9 +88,16 @@ export const unrollDialogueShots = (
 ): string => {
     return shots
         .map((shot) => {
+            if (!Number.isInteger(shot.fromFrame) || shot.fromFrame < 0 || !Number.isInteger(shot.durationInFrames) || shot.durationInFrames < 0) {
+                throw new Error('ERR_FLOAT_FRAME_BOUNDS: Frame boundaries must be unquoted integers.')
+            }
+
+            const anchorPoint = shot.anchorPoint || { x: 512, y: 512 }
+            const mouthBoundingBox = shot.mouthBoundingBox || { x: 0, y: 0, width: 64, height: 64 }
+
             const projection = projectCoordinatePercentages(
-                shot.anchorPoint.x,
-                shot.anchorPoint.y,
+                anchorPoint.x,
+                anchorPoint.y,
                 canvasWidth,
                 canvasHeight,
             )
@@ -84,8 +111,8 @@ export const unrollDialogueShots = (
           <GoblinPuppet
             character="${shot.characterName}"
             emotion="${shot.emotion}"
-            anchorPoint={{ x: ${shot.anchorPoint.x}, y: ${shot.anchorPoint.y} }}
-            mouthBoundingBox={{ x: ${shot.mouthBoundingBox.x}, y: ${shot.mouthBoundingBox.y}, width: ${shot.mouthBoundingBox.width}, height: ${shot.mouthBoundingBox.height} }}
+            anchorPoint={{ x: ${anchorPoint.x}, y: ${anchorPoint.y} }}
+            mouthBoundingBox={{ x: ${mouthBoundingBox.x}, y: ${mouthBoundingBox.y}, width: ${mouthBoundingBox.width}, height: ${mouthBoundingBox.height} }}
           />
           <Audio src={staticFile("${shot.audioWavPath}")} volume={${volumeLevel}} />
         </Shot${shotNumStr}CameraWrapper>
@@ -112,17 +139,70 @@ export const bakeStaticComposition = (
     const lastShot = input.shots[input.shots.length - 1]
     const totalDurationFrames = lastShot.fromFrame + lastShot.durationInFrames
 
-    const unrolledSequences = unrollDialogueShots(
-        input.shots,
-        canvasWidth,
-        canvasHeight,
-    )
+    let sourceCode = ''
 
-    // Synthesize camera wrapper subcomponents for hook isolation
-    const cameraWrappers = input.shots
-        .map((shot) => {
-            const shotNumStr = String(shot.shotIndex).padStart(2, '0')
-            return `const Shot${shotNumStr}CameraWrapper: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => {
+    if (input.audioOnly) {
+        for (const shot of input.shots) {
+            if (!Number.isInteger(shot.fromFrame) || shot.fromFrame < 0 || !Number.isInteger(shot.durationInFrames) || shot.durationInFrames < 0) {
+                throw new Error('ERR_FLOAT_FRAME_BOUNDS: Frame boundaries must be unquoted integers.')
+            }
+        }
+
+        const speechWindows: SpeechWindowSpec[] = input.shots.map(s => ({ fromFrame: s.fromFrame, durationInFrames: s.durationInFrames }))
+        const ambientTrackJsx = input.ambientWavPath ? unrollAmbientTrackJsx(input.ambientWavPath, speechWindows) : ''
+        const dialogueJsx = unrollAudioOnlyDialogueShots(input.shots)
+        const foleyJsx = unrollFoleySequencesJsx(input.foleyPlacements || [])
+
+        sourceCode = `// @lifecycle: generated
+// @series: ${input.seriesSlug}
+// @episode: ${input.episodeId}
+// @total_frames: ${totalDurationFrames}
+
+import React from 'react';
+import { Composition, Sequence, Audio, staticFile } from 'remotion';
+
+export const Episode_${input.episodeId}: React.FC = () => {
+  return (
+    <div style={{ width: ${canvasWidth}, height: ${canvasHeight}, backgroundColor: '#000000', position: 'relative' }}>
+      {/* TRACK 3: AMBIENT */}
+      ${ambientTrackJsx}
+
+      {/* TRACK 1: DIALOGUE */}
+${dialogueJsx}
+
+      {/* TRACK 2: FOLEY */}
+      ${foleyJsx}
+    </div>
+  );
+};
+
+export const RemotionRoot: React.FC = () => {
+    return (
+        <>
+            <Composition
+                id="Episode_${input.episodeId}"
+                component={Episode_${input.episodeId}}
+                durationInFrames={${totalDurationFrames}}
+                fps={24}
+                width={${canvasWidth}}
+                height={${canvasHeight}}
+            />
+        </>
+    );
+};
+`
+    } else {
+        const unrolledSequences = unrollDialogueShots(
+            input.shots,
+            canvasWidth,
+            canvasHeight,
+        )
+
+        // Synthesize camera wrapper subcomponents for hook isolation
+        const cameraWrappers = input.shots
+            .map((shot) => {
+                const shotNumStr = String(shot.shotIndex).padStart(2, '0')
+                return `const Shot${shotNumStr}CameraWrapper: React.FC<{ children: React.ReactNode; style?: React.CSSProperties }> = ({ children, style }) => {
   const frame = useCurrentFrame();
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', ...style }}>
@@ -130,10 +210,10 @@ export const bakeStaticComposition = (
     </div>
   );
 };`
-        })
-        .join('\n\n')
+            })
+            .join('\n\n')
 
-    const sourceCode = `// @lifecycle: generated
+        sourceCode = `// @lifecycle: generated
 // @series: ${input.seriesSlug}
 // @episode: ${input.episodeId}
 // @total_frames: ${totalDurationFrames}
@@ -152,6 +232,7 @@ ${unrolledSequences}
   );
 };
 `
+    }
 
     return {
         status: 'SUCCESS',
