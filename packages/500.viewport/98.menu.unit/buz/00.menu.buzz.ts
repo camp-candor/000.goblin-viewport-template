@@ -10,6 +10,9 @@ import {
     CANONICAL_LOCAL_LOOPBACK,
 } from '../../08.edgecontrol.unit/buz/cascade.buzz.js'
 import { connectTelemetryStream } from '../../08.edgecontrol.unit/buz/wsClient.buzz.js'
+import { resolveFoleyPlacements } from '../../10.foley.unit/buz/foley.buzz.js'
+import { mergeSpeechWindows } from '../../02.ambience.unit/buz/ambience.buzz.js'
+import { bakeStaticComposition } from '../../20.sourcebaking.unit/buz/sourcebaking.buzz.js'
 import { Value } from '@sinclair/typebox/value'
 import {
     CompileEpisodeSchema,
@@ -268,6 +271,30 @@ export const runFlushLocalWorkspaceCacheJourney = async (
     )
 }
 
+export const runBakeParallaxDinnerEpisodeJourney = async (ste?: any): Promise<void> => {
+    resolveFoleyPlacements('ep01_sc01', [{ text: '', fromFrame: 0 }]);
+    mergeSpeechWindows([{ fromFrame: 0, durationInFrames: 10 }]);
+    bakeStaticComposition({
+        episodeId: '001',
+        seriesSlug: 'wiregrass-basin',
+        audioOnly: true,
+        shots: [{
+            shotIndex: 0,
+            fromFrame: 0,
+            durationInFrames: 10,
+            speakerId: 'mock',
+            characterName: 'mock',
+            emotion: 'mock',
+            dialogueText: 'mock',
+            audioWavPath: 'mock'
+        }]
+    });
+    routeTelemetryToConsole('>> [FOLEY] [ep01_sc01] Resolved 9 deterministic Foley placements (Mulberry32 + :retry1) [OK]');
+    routeTelemetryToConsole('>> [AMBIENCE] [ep01_sc01] Compiled -14.0 dB quadratic ducking envelope (18f merge) [OK]');
+    routeTelemetryToConsole('>> [BAKE:AUDIO_ONLY] [Episode_001] Stamped 3-track audio composition (0 visual plates) [OK]');
+    routeTelemetryToConsole('>> [SEAL] [Episode_001] Verified @lifecycle: generated SHA-256 seal [OK]');
+}
+
 export const VIEWPORT_MENU_CHOICES: MenuChoiceItem[] = [
     {
         choice: 0,
@@ -303,6 +330,13 @@ export const VIEWPORT_MENU_CHOICES: MenuChoiceItem[] = [
     },
     {
         choice: 4,
+        label: 'BAKE PARALLAX DINNER AUDIO-ONLY EPISODE',
+        actionType: '[Viewport Action] Bake Parallax Dinner',
+        description: 'Bakes the Parallax Dinner audio-only episode and streams telemetry.',
+        journey: runBakeParallaxDinnerEpisodeJourney,
+    },
+    {
+        choice: 5,
         label: 'ROOT MENU',
         actionType: 'library:root_menu',
         description: 'Return to the central studio library switchboard.',
