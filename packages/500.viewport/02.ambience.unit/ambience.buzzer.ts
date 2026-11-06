@@ -1,2 +1,3 @@
-export { initAmbience } from './buz/ambience.buzz'
-export { updateAmbience } from './buz/ambience.buzz'
+export { initAmbience } from './buz/ambience.buzz.js'
+export { updateAmbience } from './buz/ambience.buzz.js'
+export { runCompileAmbienceBuzz } from './buz/ambience.buzz.js'
