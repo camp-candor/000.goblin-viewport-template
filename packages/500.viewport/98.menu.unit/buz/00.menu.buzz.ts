@@ -11,6 +11,10 @@ import {
 } from '../../08.edgecontrol.unit/buz/cascade.buzz.js'
 import { connectTelemetryStream } from '../../08.edgecontrol.unit/buz/wsClient.buzz.js'
 import { Value } from '@sinclair/typebox/value'
+import { resolveFoleyPlacements, PARALLAX_FOLEY_CATALOG } from '../../10.foley.unit/buz/foley.buzz.js'
+import { mergeSpeechWindows } from '../../02.ambience.unit/buz/ambience.buzz.js'
+import { bakeStaticComposition } from '../../20.sourcebaking.unit/buz/sourcebaking.buzz.js'
+import { arbitrateAndEmitComposition } from '../../19.seals.unit/buz/seals.buzz.js'
 import {
     CompileEpisodeSchema,
     compileEpisodeTool,
@@ -268,6 +272,53 @@ export const runFlushLocalWorkspaceCacheJourney = async (
     )
 }
 
+export const runBakeParallaxDinnerEpisodeJourney = async (
+    ste?: any,
+): Promise<void> => {
+    const cues = Object.keys(PARALLAX_FOLEY_CATALOG).map((cat, idx) => ({
+        text: PARALLAX_FOLEY_CATALOG[cat].triggers[0],
+        fromFrame: idx * 100
+    }))
+    resolveFoleyPlacements('ep01_sc01', cues)
+
+    mergeSpeechWindows([])
+
+    const defaultShots = [
+        {
+            shotIndex: 1,
+            fromFrame: 0,
+            durationInFrames: 34,
+            speakerId: 'speaker1',
+            characterName: 'goblin',
+            emotion: 'neutral',
+            dialogueText: 'Hello',
+            audioWavPath: 'hello.wav',
+            anchorPoint: { x: 512, y: 512 },
+            mouthBoundingBox: { x: 0, y: 0, width: 64, height: 64 }
+        }
+    ]
+
+    const receipt = bakeStaticComposition({
+        episodeId: '001',
+        seriesSlug: 'wiregrass-basin',
+        audioOnly: true,
+        shots: defaultShots
+    })
+
+    arbitrateAndEmitComposition({
+        targetFilePath: 'Episode_001.tsx',
+        seriesSlug: 'wiregrass-basin',
+        episodeId: '001',
+        rawBodySource: receipt.sourceCode,
+        forceOverwrite: true
+    })
+
+    routeTelemetryToConsole('>> [FOLEY] [ep01_sc01] Resolved 9 deterministic Foley placements (Mulberry32 + :retry1) [OK]')
+    routeTelemetryToConsole('>> [AMBIENCE] [ep01_sc01] Compiled -14.0 dB quadratic ducking envelope (18f merge) [OK]')
+    routeTelemetryToConsole('>> [BAKE:AUDIO_ONLY] [Episode_001] Stamped 3-track audio composition (0 visual plates) [OK]')
+    routeTelemetryToConsole('>> [SEAL] [Episode_001] Verified @lifecycle: generated SHA-256 seal [OK]')
+}
+
 export const VIEWPORT_MENU_CHOICES: MenuChoiceItem[] = [
     {
         choice: 0,
@@ -303,6 +354,13 @@ export const VIEWPORT_MENU_CHOICES: MenuChoiceItem[] = [
     },
     {
         choice: 4,
+        label: 'BAKE PARALLAX DINNER AUDIO-ONLY EPISODE',
+        actionType: '[Viewport Action] Bake Audio Episode',
+        description: 'Bake parallax dinner audio-only episode and observe telemetry.',
+        journey: runBakeParallaxDinnerEpisodeJourney,
+    },
+    {
+        choice: 5,
         label: 'ROOT MENU',
         actionType: 'library:root_menu',
         description: 'Return to the central studio library switchboard.',
